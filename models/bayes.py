@@ -5,25 +5,38 @@ import numpy as np
 
 class NaiveBayes:
     def __init__(self, train_matrix, levels, alpha=0):
-        self.matrix = train_matrix
+        self.matrix = train_matrix.toarray() #TODO check if it is already an numpy array...
         self.alpha = alpha
         self.levels = levels
+        self.fitted = False
         pass
 
-    def __probability_rui_is_vs(self, i, v):
-        rating_count = {} #no map but array?
-        rows = self.matrix.shape[0]
+    def fit(self):
+        self.matrix_decompositions = {"total":self.matrix}
+        self.matrix_row_entry_count = {"total":np.zeros(self.matrix.shape[0])}
+        self.matrix_column_entry_count = {"total":np.zeros(self.matrix.shape[1])}
         for level in self.levels:
-            temp = self.matrix[self.matrix[:,i].nonzero()[0],i].toarray()-v
-            rating_count[level] = rows - np.count_nonzero(temp) #TODO axis
-        return (rating_count[v]+self.alpha)/(sum(rating_count.values()) + len(self.levels)*self.alpha)
+            temp = np.full_like(self.matrix, level)
+            temp[(self.matrix - level).nonzero()] = 0
+            self.matrix_decompositions[level] = temp
+            row_count = np.sum(temp,axis=1)/level
+            self.matrix_row_entry_count[level] = row_count
+            self.matrix_row_entry_count["total"] = self.matrix_row_entry_count["total"] + row_count
+            col_count = np.sum(temp, axis=0) / level
+            self.matrix_column_entry_count[level] = col_count
+            self.matrix_column_entry_count["total"] = self.matrix_column_entry_count["total"] + col_count
+        self.fitted = True
+
+    def __probability_rui_is_vs(self, i, v):
+        if not self.fitted:
+            raise Exception("model not fitted")
+        return (self.matrix_column_entry_count[v][i] + self.alpha)/(self.matrix_column_entry_count["total"][i] + len(self.levels)*self.alpha)
 
     def __probability_ruk_cond_ruj_is_vs(self, u, k, j, v):
+        if not self.fitted:
+            raise Exception("model not fitted")
         ruk = self.matrix[u,k]
-        rows = self.matrix.shape[0]
-        users_rated_item_k_to_ruk = rows - np.count_nonzero(self.matrix[self.matrix[:,k].nonzero()[0],k].toarray() - ruk) #TODO axis
-        users_rated_item_j_to_v = rows - np.count_nonzero(self.matrix[self.matrix[:,j].nonzero()[0],j].toarray() - v)
-        return (users_rated_item_k_to_ruk + self.alpha)/(users_rated_item_j_to_v + len(self.levels)*self.alpha)
+        return (self.matrix_column_entry_count[ruk][k] + self.alpha)/(self.matrix_column_entry_count[v][j] + len(self.levels)*self.alpha)
 
     def predict(self, u, i, mode=None): #TODO vectorized
         if mode is None:
@@ -31,7 +44,7 @@ class NaiveBayes:
         elif mode == 0: #row (user) based
             #items rated by user u
             Ru = self.matrix[u,:]
-            Iu = Ru.nonzero()[1].tolist() #todo Vector?
+            Iu = Ru.nonzero()[0].tolist() #todo Vector?
             predicts = {}
             for level in self.levels:
                 naive = 1
