@@ -8,6 +8,7 @@ from sklearn import model_selection as ms
 import metrices.accuracy as accuracy
 from knn.distance_metrics import pearson, cosine
 from knn.knn import kNN
+from models.bayes import NaiveBayes
 from utility.matrices import convert_coo_to_sparse, make_rows_mean_free
 
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
@@ -32,19 +33,31 @@ example = np.array([[7,6,7,4,5,4],
 example_sparse = sparse.coo_matrix(example)
 (matrix, mean) = make_rows_mean_free(X_train)
 
-classificator = kNN(X_train,3,pearson,cosine)
+classificator = NaiveBayes(X_train, [1,2,3,4,5],alpha=0.5)
 
-y_hat = np.empty((0,0))
-
+y_hat = []
 print(f"Lines: {X_test_raw.shape[0]}")
-line_c = 0
-def calc(line):
-    global line_c
-    line_c += 1
+
+line_c = 1
+for line in X_test_raw[:250,:].tolist():
     print(line_c)
-    np.append(y_hat, classificator.classify(line[0], line[1],dir=0))
+    line_c += 1
+    y_hat.append(classificator.predict(line[0], line[1],mode=0))
 
-np.apply_along_axis(calc, axis=1, arr=X_test_raw)
+rmse_bayes = accuracy.rmse(X_test_raw[:250,2], np.array(y_hat)-1)
+print(rmse_bayes)
 
-rmse = accuracy.rmse(X_test_raw[:,2], y_hat)
-print(rmse)
+print("knn")
+
+#knn = kNN(X_train,3,pearson,cosine)
+
+#y_hat_knn = []
+#line_c = 1
+#for line in X_test_raw[:100,:].tolist():
+#    print(line_c)
+#    line_c += 1
+#    y_hat_knn.append(knn.classify(line[0], line[1],dir=0))
+
+#rmse_knn = accuracy.rmse(X_test_raw[:100,2], np.array(y_hat_knn)-1)
+#print(rmse_knn)
+
