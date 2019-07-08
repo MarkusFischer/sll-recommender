@@ -27,16 +27,32 @@ class NaiveBayes:
             self.matrix_column_entry_count["total"] = self.matrix_column_entry_count["total"] + col_count
         self.fitted = True
 
-    def __probability_rui_is_vs(self, i, v):
+    def __probability_rui_is_vs(self, i, v, transpose=False):
         if not self.fitted:
             raise Exception("model not fitted")
-        return (self.matrix_column_entry_count[v][i] + self.alpha)/(self.matrix_column_entry_count["total"][i] + len(self.levels)*self.alpha)
+        if transpose:
+            return (self.matrix_row_entry_count[v][i] + self.alpha) / (
+                    self.matrix_row_entry_count["total"][i] + len(self.levels) * self.alpha)
+        else:
+            return (self.matrix_column_entry_count[v][i] + self.alpha) / (
+                    self.matrix_column_entry_count["total"][i] + len(self.levels)*self.alpha)
 
-    def __probability_ruk_cond_ruj_is_vs(self, u, k, j, v):
+    def __probability_ruk_cond_ruj_is_vs(self, u, k, j, v,transpose=False):
         if not self.fitted:
             raise Exception("model not fitted")
-        ruk = self.matrix[u,k]
-        return (self.matrix_column_entry_count[ruk][k] + self.alpha)/(self.matrix_column_entry_count[v][j] + len(self.levels)*self.alpha)
+        if transpose:
+            rvj = self.matrix[k, j]
+        else:
+            ruk = self.matrix[u, k]
+        if transpose:
+            return (self.matrix_row_entry_count[rvj][k] + self.alpha) / (
+                    self.matrix_row_entry_count[v][j] + len(self.levels) * self.alpha)
+        else:
+            #Anzahl der Nutzer für das k-te Item Rating ruk vergeben: self.matrix_column_entry_count[ruk][k]
+            #Anzahl der Nutzer für das k-te Item Rating v vergeben: self.matrix_column_entry_count[v][k]
+            #return (self.alpha) / (len(self.alpha) * self.alpha )
+            return (self.matrix_column_entry_count[v][j] + self.alpha) / (
+                    self.matrix_column_entry_count[ruk][k] + len(self.levels)*self.alpha)
 
     def predict(self, u, i, mode=None): #TODO vectorized
         if mode is None:
@@ -53,4 +69,12 @@ class NaiveBayes:
                 predicts[level] = naive*self.__probability_rui_is_vs(i, level)
             return max(predicts.items(), key=operator.itemgetter(1))[0]
         elif mode == 1: #column (item) based
-            pass
+            Ci = self.matrix[:,i]
+            Ui = Ci.nonzero()[0].tolist()  # todo Vector?
+            predicts = {}
+            for level in self.levels:
+                naive = 1
+                for v in Ui:
+                    naive *= self.__probability_ruk_cond_ruj_is_vs(v, i, i, level, transpose=True)
+                predicts[level] = naive * self.__probability_rui_is_vs(u, level, transpose=True)
+            return max(predicts.items(), key=operator.itemgetter(1))[0]

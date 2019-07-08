@@ -47,15 +47,26 @@ mae_bayes = accuracy.mae(X_test_raw[:,2], np.array(y_hat)-1)
 print(rmse_bayes)
 print(mae_bayes)
 
-print("saving to file")
-Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
-bayes = []
-for line in Xq.tolist():
-    bayes.append(classificator.predict(line[0], line[1],mode=0))
-bayes = np.array(bayes)-1
-Xq_bayes = np.column_stack((Xq,bayes))
-np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
-           delimiter=",", newline="\n", encoding="utf-8")
+print("item based")
+y_hat = []
+for line in X_test_raw.tolist():
+    y_hat.append(classificator.predict(line[0], line[1],mode=1))
+
+rmse_bayes = accuracy.rmse(X_test_raw[:,2], np.array(y_hat)-1)
+mae_bayes = accuracy.mae(X_test_raw[:,2], np.array(y_hat)-1)
+print(rmse_bayes)
+print(mae_bayes)
+
+
+#print("saving to file")
+#Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
+#bayes = []
+#for line in Xq.tolist():
+#    bayes.append(classificator.predict(line[0], line[1],mode=0))
+#bayes = np.array(bayes)-1
+#Xq_bayes = np.column_stack((Xq,bayes))
+#np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
+#           delimiter=",", newline="\n", encoding="utf-8")
 
 
 
