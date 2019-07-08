@@ -1,4 +1,9 @@
+import os
+
 import numpy as np
+import matplotlib.pyplot as plt
+
+from utility.matrices import convert_coo_to_sparse
 
 A = np.array([[1, 2, 3, 0],
               [0, 0, 2, 0],
@@ -21,3 +26,14 @@ A3[(A-3).nonzero()]=0
 
 #Anzahl der belegten Reihen mit Wert i
 row_count = np.sum(A2,axis=1)/2
+
+X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
+X_raw[:,2] += 1
+Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
+q = np.full((Xq.shape[0],1),7)
+X_raw_mat = convert_coo_to_sparse(X_raw)
+X_q_mat = convert_coo_to_sparse(np.column_stack((Xq, q)))
+res = X_raw_mat.toarray() + X_q_mat.toarray()
+plt.matshow(res)
+plt.colorbar()
+plt.show()
