@@ -9,6 +9,7 @@ import metrices.accuracy as accuracy
 from knn.distance_metrics import pearson, cosine
 from knn.knn import kNN
 from models.bayes import NaiveBayes
+from models.matrix_factorization import UMF
 from utility.matrices import convert_coo_to_sparse, make_rows_mean_free
 
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
@@ -33,22 +34,19 @@ example = np.array([[7,6,7,4,5,4],
 example_sparse = sparse.coo_matrix(example)
 (matrix, mean) = make_rows_mean_free(X_train)
 
-classificator = NaiveBayes(X_train, [1,2,3,4,5],alpha=0.6)
+classificator = UMF(X_train_raw, rank=8, random_state=2, eta=0.000005, regularization=None, epsilon=1, max_run=500)
 classificator.fit()
 
 y_hat = []
 print(f"Lines: {X_test_raw.shape[0]}")
 
-line_c = 1
-for line in X_test_raw[:300,:].tolist():
-    print(line_c)
-    line_c += 1
-    y_hat.append(classificator.predict(line[0], line[1],mode=0))
+for line in X_test_raw.tolist():
+    y_hat.append(classificator.predict(line[0], line[1]))
 
-rmse_bayes = accuracy.rmse(X_test_raw[:300,2], np.array(y_hat)-1)
-mae_bayes = accuracy.mae(X_test_raw[:300,2], np.array(y_hat)-1)
-print(rmse_bayes)
-print(mae_bayes)
+rmse = accuracy.rmse(X_test_raw[:,2], np.array(y_hat)-1)
+mae = accuracy.mae(X_test_raw[:,2], np.array(y_hat)-1)
+print(rmse)
+print(mae)
 
 #print("item based")
 #y_hat = []
@@ -61,15 +59,15 @@ print(mae_bayes)
 #print(mae_bayes)
 
 
-#print("saving to file")
-#Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
-#bayes = []
-#for line in Xq.tolist():
-#    bayes.append(classificator.predict(line[0], line[1],mode=0))
-#bayes = np.array(bayes)-1
-#Xq_bayes = np.column_stack((Xq,bayes))
-#np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
-#           delimiter=",", newline="\n", encoding="utf-8")
+print("saving to file")
+Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
+bayes = []
+for line in Xq.tolist():
+    bayes.append(classificator.predict(line[0], line[1]))
+bayes = np.array(bayes)-1
+Xq_bayes = np.column_stack((Xq,bayes))
+np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
+           delimiter=",", newline="\n", encoding="utf-8")
 
 
 
