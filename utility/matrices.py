@@ -2,7 +2,7 @@ from scipy import sparse
 import numpy as np
 
 
-def convert_coo_to_sparse(matrix):
+def convert_sparse_coo_to_full_matrix(matrix):
     return sparse.coo_matrix((matrix[:,2], (matrix[:,0], matrix[:,1]))).tocsr()
 
 def make_rows_mean_free(matrix):

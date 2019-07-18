@@ -10,14 +10,14 @@ from knn.distance_metrics import pearson, cosine
 from knn.knn import kNN
 from models.bayes import NaiveBayes
 from models.matrix_factorization import UMF
-from utility.matrices import convert_coo_to_sparse, make_rows_mean_free
+from utility.matrices import convert_sparse_coo_to_full_matrix, make_rows_mean_free
 
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
 print(f"maximum rating: {np.amax(X_raw[:,2])}")
 print(f"minimum rating: {np.amin(X_raw[:,2])}")
 X_train_raw, X_test_raw = ms.train_test_split(X_raw, test_size=0.1, random_state=42)
-X_train = convert_coo_to_sparse(X_train_raw)
-X_test = convert_coo_to_sparse(X_test_raw)
+X_train = convert_sparse_coo_to_full_matrix(X_train_raw)
+X_test = convert_sparse_coo_to_full_matrix(X_test_raw)
 
 #simple test mse/rmse/mae with given data should be zero
 mse = accuracy.mse(X_test_raw[:,2],X_test_raw[:,2])

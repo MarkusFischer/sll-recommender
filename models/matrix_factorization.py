@@ -3,10 +3,79 @@ import random
 import numpy as np
 
 from metrices.accuracy import rmse, mae
-from utility.matrices import convert_coo_to_sparse
+from utility.matrices import convert_sparse_coo_to_full_matrix
 
 
 class UMF:
+    def __init__(self,          #TODO check each parameter for correct type
+                    X_train,
+                    rank=10,
+                    random_state=random.randint(1, 101),
+                    regularization=None,
+                    eta=0.2,
+                    epsilon=1,
+                    max_run=1_000,
+                    method="GD"
+                ):
+        if X_train.shape[1] != 3:
+            raise Exception("wrong shape")
+        self.train = X_train
+        self.train_full = convert_sparse_coo_to_full_matrix(X_train).toarray()
+        self.m = self.train_full.shape[0]
+        self.n = self.train_full.shape[1]
+        self.rank = rank
+        self.random_state=random_state
+        self.eta = eta
+        self.epsilon = epsilon
+        self.max_run = max_run
+        self.regularization = regularization
+        np.random.seed(self.random_state)
+        self.method = method.lower()
+        self.matrix = None
+
+    def fit(self, verbosity=0, validation_set=None):
+        if verbosity == 2 and validation_set is None:
+            raise Exception("For usage of verbosity level 2 an validation set is required")
+        if verbosity >= 1:
+            print("initialize U and V with random values")
+        U = np.random.rand(self.m, self.rank)
+        V = np.random.rand(self.n, self.rank)
+
+        if self.method == "gd":
+            E_old = np.zeros((self.m,self.n))
+            for i in range(1, self.max_run):
+                R_predicted = np.matmul(U, V.T)
+                E = (self.train_full - R_predicted)
+                E[np.nonzero(self.train_full == 0)] = 0
+                if verbosity >= 1:
+                    print(f"Cycle: {i} of {self.max_run} error(step_size): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
+
+                if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
+                    if verbosity >= 1:
+                        print("Convergency reached!")
+                    break
+
+                if self.regularization is not None:
+                    self.U = self.U - self.eta * self.regularization * self.U + self.eta * np.matmul(E, self.V)
+                    self.V = self.V - self.eta * self.regularization * self.V + self.eta * np.matmul(E.T, U)
+                else:
+                    self.U = U + self.eta * np.matmul(E, V)
+                    self.V = V + self.eta * np.matmul(E.T, U)
+                E_old = E
+
+            self.matrix = np.matmul(U,V.T)
+
+        elif self.method == "sgd":
+            pass
+        else:
+            raise Exception(f"{self.method} is not an valid learning algorithm. Currently only gradient descent and stochastic gradient descent are supported")
+
+    def predict(self, coords):
+        if not isinstance(coords, np.ndarray) or not coords.shape[1] != 2:
+            raise Exception("Predict parameter is not of type np.ndarray or has wrong column count")
+        return self.matrix[coords[:,0],coords[:,1]]
+
+class UMF_old:
     def __init__(self,
                     X_train,
                     rank=10,
@@ -20,7 +89,7 @@ class UMF:
         if X_train.shape[1] != 3:
             raise Exception("wrong shape")
         self.train = X_train
-        self.train_full = convert_coo_to_sparse(X_train).toarray()
+        self.train_full = convert_sparse_coo_to_full_matrix(X_train).toarray()
         self.m = self.train_full.shape[0]
         self.n = self.train_full.shape[1]
         self.rank = rank

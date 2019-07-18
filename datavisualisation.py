@@ -3,18 +3,18 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utility.matrices import convert_coo_to_sparse
+from utility.matrices import convert_sparse_coo_to_full_matrix
 
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
 X_raw[:,2] = 1
-X_raw = convert_coo_to_sparse(X_raw).toarray()
+X_raw = convert_sparse_coo_to_full_matrix(X_raw).toarray()
 plt.figure()
 plt.matshow(X_raw)
 plt.savefig(os.path.join("img", "train_matrix.png"))
 
 Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
 q = np.full((Xq.shape[0],1),2)
-X_q = convert_coo_to_sparse(np.column_stack((Xq, q))).toarray()
+X_q = convert_sparse_coo_to_full_matrix(np.column_stack((Xq, q))).toarray()
 plt.figure()
 plt.matshow(X_raw+X_q)
 plt.savefig(os.path.join("img", "train_and_qualify.png"))
