@@ -16,37 +16,30 @@ X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np
 print(f"maximum rating: {np.amax(X_raw[:,2])}")
 print(f"minimum rating: {np.amin(X_raw[:,2])}")
 X_train_raw, X_test_raw = ms.train_test_split(X_raw, test_size=0.1, random_state=42)
-X_train = convert_sparse_coo_to_full_matrix(X_train_raw)
-X_test = convert_sparse_coo_to_full_matrix(X_test_raw)
 
-#simple test mse/rmse/mae with given data should be zero
-mse = accuracy.mse(X_test_raw[:,2],X_test_raw[:,2])
-rmse = accuracy.rmse(X_test_raw[:,2],X_test_raw[:,2])
-mae = accuracy.mae(X_test_raw[:,2],X_test_raw[:,2])
+print("data preprocessing")
+X_train_raw[:,2] += 1
 
-#test with examples
-example = np.array([[7,6,7,4,5,4],
-                    [6,7,0,4,3,4],
-                    [0,3,3,1,1,0],
-                    [1,2,2,3,3,4],
-                    [1,0,1,2,3,3]])
+print("fitting with sgd")
+classificator_sgd = UMF(X_train_raw, rank=5, random_state=2, eta=0.000005, regularization=None, epsilon=0.5, max_run=10, method="sgd")
+classificator_sgd.fit(verbosity=1)
 
-example_sparse = sparse.coo_matrix(example)
-(matrix, mean) = make_rows_mean_free(X_train)
+#print("fitting with classic gd")
+#classificator = UMF(X_train_raw, rank=5 , random_state=2, eta=0.000005, regularization=None, epsilon=0.5, max_run=500)
+#classificator.fit(verbosity=1)
 
-classificator = UMF(X_train_raw, rank=7 , random_state=2, eta=0.000005, regularization=None, epsilon=0.5, max_run=1_000)
-classificator.fit()
 
-y_hat = []
-print(f"Lines: {X_test_raw.shape[0]}")
 
-for line in X_test_raw.tolist():
-    y_hat.append(classificator.predict(line[0], line[1]))
+#rmse_gd = accuracy.rmse(X_test_raw[:,2], classificator.predict(X_test_raw[:,0:1])-1)
+#mae_gd = accuracy.mae(X_test_raw[:,2], classificator.predict(X_test_raw[:,0:1])-1)
+#print(f"RMSE gd: {rmse_gd}")
+#print(f"MAE gd: {mae_gd}")
 
-rmse = accuracy.rmse(X_test_raw[:,2], np.array(y_hat)-1)
-mae = accuracy.mae(X_test_raw[:,2], np.array(y_hat)-1)
-print(rmse)
-print(mae)
+rmse_sgd = accuracy.rmse(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
+mae_sgd = accuracy.mae(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
+print(f"RMSE sgd: {rmse_sgd}")
+print(f"MAE sgd: {mae_sgd}")
+
 
 #print("item based")
 #y_hat = []
@@ -59,15 +52,15 @@ print(mae)
 #print(mae_bayes)
 
 
-print("saving to file")
-Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
-bayes = []
-for line in Xq.tolist():
-    bayes.append(classificator.predict(line[0], line[1]))
-bayes = np.array(bayes)-1
-Xq_bayes = np.column_stack((Xq,bayes))
-np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
-           delimiter=",", newline="\n", encoding="utf-8")
+#print("saving to file")
+#Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
+#bayes = []
+#for line in Xq.tolist():
+#    bayes.append(classificator.predict(line[0], line[1]))
+#bayes = np.array(bayes)-1
+#Xq_bayes = np.column_stack((Xq,bayes))
+#np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
+#           delimiter=",", newline="\n", encoding="utf-8")
 
 
 

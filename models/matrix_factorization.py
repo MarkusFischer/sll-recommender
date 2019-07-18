@@ -68,14 +68,15 @@ class UMF:
         elif self.method == "sgd":
             E_old = np.zeros((self.m, self.n))
             for i in range(1, self.max_run):
-                R_predicted = np.matul(U, V.T)
+                R_predicted = np.matmul(U, V.T)
                 E = self.train_full - R_predicted
                 E[np.nonzero(self.train_full == 0)] = 0
 
                 if verbosity >= 1:
-                    print(f"Cycle: {i} of {self.max_run} error(step_size): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
+                    print(f"Cycle: {i} of {self.max_run} error(step_size): {0.5* np.abs(np.sum(self.train_full*self.train_full - E*E))}")
 
-                if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
+#                if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
+                if 0.5* np.abs(np.sum(self.train_full*self.train_full - E*E)) <= self.epsilon:
                     if verbosity >= 1:
                         print("Convergency reached!")
                     break
@@ -83,20 +84,19 @@ class UMF:
                 training_shuffeld = self.train
                 np.random.shuffle(training_shuffeld)
                 for sample in range(0, training_shuffeld.shape[0]): #TODO regularization
-                    i = training_shuffeld[sample, 0]
-                    j = training_shuffeld[sample, 1]
-
+                    i = training_shuffeld[1, 0]
+                    j = training_shuffeld[1, 1]
                     U_old = U
                     V_old = V
                     U[i,:] = U_old[i,:] + self.eta * E[i,j] * V_old[j,:]
-                    V[j, :] = V_old[j, :] + self.eta * E[i, j] * V_old[i,:]
+                    V[j, :] = V_old[j, :] + self.eta * E[i, j] * U_old[i,:]
                 E_old = E
         else:
             raise Exception(f"{self.method} is not an valid learning algorithm. Currently only gradient descent and stochastic gradient descent are supported")
         self.matrix = np.matmul(U, V.T)
 
     def predict(self, coords):
-        if not isinstance(coords, np.ndarray) or not coords.shape[1] != 2:
+        if not isinstance(coords, np.ndarray):
             raise Exception("Predict parameter is not of type np.ndarray or has wrong column count")
         return self.matrix[coords[:,0],coords[:,1]]
 
