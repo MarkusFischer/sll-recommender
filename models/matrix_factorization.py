@@ -55,20 +55,45 @@ class UMF:
                         print("Convergency reached!")
                     break
 
+                U_old = U
+                V_old = V
                 if self.regularization is not None:
-                    self.U = self.U - self.eta * self.regularization * self.U + self.eta * np.matmul(E, self.V)
-                    self.V = self.V - self.eta * self.regularization * self.V + self.eta * np.matmul(E.T, U)
+                    U = U - self.eta * self.regularization * U_old + self.eta * np.matmul(E, V_old)
+                    V = V - self.eta * self.regularization * V_old + self.eta * np.matmul(E.T, U_old)
                 else:
-                    self.U = U + self.eta * np.matmul(E, V)
-                    self.V = V + self.eta * np.matmul(E.T, U)
+                    U = U_old + self.eta * np.matmul(E, V_old)
+                    V = V_old + self.eta * np.matmul(E.T, U_old)
                 E_old = E
 
-            self.matrix = np.matmul(U,V.T)
-
         elif self.method == "sgd":
-            pass
+            E_old = np.zeros((self.m, self.n))
+            for i in range(1, self.max_run):
+                R_predicted = np.matul(U, V.T)
+                E = self.train_full - R_predicted
+                E[np.nonzero(self.train_full == 0)] = 0
+
+                if verbosity >= 1:
+                    print(f"Cycle: {i} of {self.max_run} error(step_size): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
+
+                if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
+                    if verbosity >= 1:
+                        print("Convergency reached!")
+                    break
+
+                training_shuffeld = self.train
+                np.random.shuffle(training_shuffeld)
+                for sample in range(0, training_shuffeld.shape[0]): #TODO regularization
+                    i = training_shuffeld[sample, 0]
+                    j = training_shuffeld[sample, 1]
+
+                    U_old = U
+                    V_old = V
+                    U[i,:] = U_old[i,:] + self.eta * E[i,j] * V_old[j,:]
+                    V[j, :] = V_old[j, :] + self.eta * E[i, j] * V_old[i,:]
+                E_old = E
         else:
             raise Exception(f"{self.method} is not an valid learning algorithm. Currently only gradient descent and stochastic gradient descent are supported")
+        self.matrix = np.matmul(U, V.T)
 
     def predict(self, coords):
         if not isinstance(coords, np.ndarray) or not coords.shape[1] != 2:
