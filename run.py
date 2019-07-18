@@ -34,7 +34,7 @@ example = np.array([[7,6,7,4,5,4],
 example_sparse = sparse.coo_matrix(example)
 (matrix, mean) = make_rows_mean_free(X_train)
 
-classificator = UMF(X_train_raw, rank=8, random_state=2, eta=0.000005, regularization=None, epsilon=1, max_run=500)
+classificator = UMF(X_train_raw, rank=7 , random_state=2, eta=0.000005, regularization=None, epsilon=0.5, max_run=1_000)
 classificator.fit()
 
 y_hat = []

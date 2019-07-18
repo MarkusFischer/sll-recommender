@@ -38,16 +38,20 @@ class UMF:
         self.U = np.random.rand(self.m, self.rank)
         self.V = np.random.rand(self.n, self.rank)
         y = self.train[:, 2]
+        E_old = self.train_full
         for i in range(1, self.max_run):
             R = np.matmul(self.U, self.V.T)
             E = (self.train_full - R)
             E[np.nonzero(self.train_full == 0)] = 0
             if verbose:
                 #print(f"Cylce: {i} of {self.max_run} error: {rmse(y,R[self.train[:,0],self.train[:,1]])}")
-                print(f"Cylce: {i} of {self.max_run} error: {np.max(np.abs(E*E))}")
+                #print(f"Cylce: {i} of {self.max_run} error: {np.sum(np.abs(E*E))}")
+                print(f"Cycle: {i} of {self.max_run} error(step_size): {0.5*np.abs(np.sum(E*E - E_old*E_old))}")
+                #print(f"step size: {}")
                 print(f"max: {np.max(R)}")
                 print(f"min: {np.min(R)}")
-            if np.all(np.abs(E*E) <= self.epsilon):
+            if 0.5*np.abs(np.sum(E*E - E_old*E_old)) <= self.epsilon:
+            #if np.all(np.abs(E*E) <= self.epsilon):
             #if rmse(y,R[self.train[:,0],self.train[:,1]]) <= self.epsilon:
                 #Konvergenz erreicht
                 if verbose:
@@ -64,6 +68,7 @@ class UMF:
             else:
                 self.U = U + self.eta*np.matmul(E,V)
                 self.V = V + self.eta*np.matmul(E.T,U)
+            E_old = E
         self.result = np.matmul(self.U, self.V.T)
 
     def predict(self, u, i):
