@@ -9,7 +9,7 @@ import metrices.accuracy as accuracy
 from knn.distance_metrics import pearson, cosine
 from knn.knn import kNN
 from models.bayes import NaiveBayes
-from models.matrix_factorization import UMF
+from models.matrix_factorization import UMF, NMF
 from utility.matrices import convert_sparse_coo_to_full_matrix, make_rows_mean_free
 
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
@@ -21,8 +21,12 @@ print("data preprocessing")
 X_train_raw[:,2] += 1
 
 print("fitting with sgd")
-classificator_sgd = UMF(X_train_raw, rank=5, random_state=2, eta=0.000005, regularization=None, epsilon=0.5, max_run=10, method="sgd")
-classificator_sgd.fit(verbosity=1)
+#classificator_sgd = UMF(X_train_raw, rank=5, random_state=2, eta=5e-6, regularization=None, epsilon=1, max_run=1000, method="sgd")
+#classificator_sgd.fit(verbosity=1)
+
+print("fitting with NMF")
+recommender = NMF(X_train_raw, rank=5, random_state=42, regularization=None, epsilon=1000, max_run=200)
+recommender.fit(verbosity=1)
 
 #print("fitting with classic gd")
 #classificator = UMF(X_train_raw, rank=5 , random_state=2, eta=0.000005, regularization=None, epsilon=0.5, max_run=500)
@@ -35,8 +39,8 @@ classificator_sgd.fit(verbosity=1)
 #print(f"RMSE gd: {rmse_gd}")
 #print(f"MAE gd: {mae_gd}")
 
-rmse_sgd = accuracy.rmse(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
-mae_sgd = accuracy.mae(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
+rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+mae_sgd = accuracy.mae(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
 print(f"RMSE sgd: {rmse_sgd}")
 print(f"MAE sgd: {mae_sgd}")
 
@@ -52,15 +56,15 @@ print(f"MAE sgd: {mae_sgd}")
 #print(mae_bayes)
 
 
-#print("saving to file")
-#Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
-#bayes = []
+print("saving to file")
+Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
+bayes = recommender.predict(Xq)
 #for line in Xq.tolist():
 #    bayes.append(classificator.predict(line[0], line[1]))
-#bayes = np.array(bayes)-1
-#Xq_bayes = np.column_stack((Xq,bayes))
-#np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
-#           delimiter=",", newline="\n", encoding="utf-8")
+bayes = np.array(bayes)-1
+Xq_bayes = np.column_stack((Xq,bayes))
+np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
+           delimiter=",", newline="\n", encoding="utf-8")
 
 
 
