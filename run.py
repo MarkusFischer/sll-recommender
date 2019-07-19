@@ -45,10 +45,10 @@ print("fitting with NMF")
 #recommender.fit(verbosity=1)
 
 print("fitting with classic gd")
-classificator = UMF(X_train_raw, rank=15, random_state=2, eta=0.00005, regularization=0.7, epsilon=0.5, max_run=200, verbose=True)
+classificator = UMF(X_train_raw, rank=25, random_state=2, eta=0.0005, regularization=0.7, epsilon=1e-5, max_run=500, verbose=True)
 classificator.fit(verbosity=1)
 
-pickle.dump(classificator, open("umf_test.pyc", "wb"))
+#pickle.dump(classificator, open("umf_test.pyc", "wb"))
 
 
 
@@ -84,13 +84,15 @@ print(f"MAE gd: {mae_gd}")
 
 print("saving to file")
 Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
-#bayes = classificator_sgd.predict(Xq)
+bayes = classificator.predict(Xq)-1
+bayes[np.nonzero(bayes < 0)] = 0
+bayes[np.nonzero(bayes > 4)] = 4
 #for line in Xq.tolist():
 #    bayes.append(classificator.predict(line[0], line[1]))
 #bayes = np.array(bayes)-1
-#Xq_bayes = np.column_stack((Xq,bayes))
-#np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
-#           delimiter=",", newline="\n", encoding="utf-8")
+Xq_bayes = np.column_stack((Xq,bayes))
+np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
+           delimiter=",", newline="\n", encoding="utf-8")
 
 
 
