@@ -17,11 +17,11 @@ X_train_raw[:,2] += 1
 data = convert_sparse_coo_to_full_matrix(X_train_raw)
 
 print("calculate pearson similarity matrix for user")
-pearson = SimiliarityMatrix(data)
+pearson = SimiliarityMatrix(data,verbose=True)
 pearson.fit()
 pearson.save("user_pearson_sim.pyc")
 
 print("calculate cosine similarity matrix for user")
-cosine = SimiliarityMatrix(data, method="cosine")
+cosine = SimiliarityMatrix(data, method="cosine",verbose=True)
 cosine.fit()
 cosine.save("user_cosine_sim.pyc")
