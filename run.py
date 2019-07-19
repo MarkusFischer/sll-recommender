@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import numpy as np
 from scipy import sparse
@@ -44,8 +45,10 @@ print("fitting with NMF")
 #recommender.fit(verbosity=1)
 
 print("fitting with classic gd")
-classificator = UMF(X_train_raw, rank=15, random_state=2, eta=0.000005, regularization=0.7, epsilon=0.5, max_run=200, verbose=True)
+classificator = UMF(X_train_raw, rank=15, random_state=2, eta=0.00005, regularization=0.7, epsilon=0.5, max_run=200, verbose=True)
 classificator.fit(verbosity=1)
+
+pickle.dump(classificator, open("umf_test.pyc", "wb"))
 
 
 

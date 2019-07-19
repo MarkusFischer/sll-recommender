@@ -128,7 +128,7 @@ class UMF:
         self.matrix = np.matmul(U, V.T)
 
     def predict(self, coords):
-        if not isinstance(coords, np.ndarray):
+        if not isinstance(coords, np.ndarray) or coords.shape[1] != 2:
             raise Exception("Predict parameter is not of type np.ndarray or has wrong column count")
         return self.matrix[coords[:,0],coords[:,1]]
 
