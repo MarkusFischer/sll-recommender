@@ -1,0 +1,85 @@
+%\documentclass[twocolumn]{scrartcl}
+\documentclass[]{scrartcl}
+\usepackage[pdftex]{hyperref}
+\usepackage{cite}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[]{algorithm2e}
+
+\DeclareMathOperator{\rank}{rank}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+%opening
+\title{Report over statistical learning theory lab final project}
+\subtitle{Building a recommender system with matrix factorization}
+\author{Markus Fischer\\ \small{\href{mailto:markus.fischer@uni-jena.de}{markus.fischer@uni-jena.de}}}
+\date{25.07.2019}
+
+\begin{document}
+
+\maketitle
+\begin{abstract}
+Here goes the abstract aphiohtpaohiohaetoihteojfjawoiarwtend ahptwphipeotwjjjjjahehofahewpthoiahteipahiophtaephoatehpaehipaehtwphatewhafdjaiethpawehpht
+\end{abstract}
+
+\section{Introduction}
+
+\section{Task}
+aphiohtpaohiohaetoihteojfjawoiarwtend~\cite{ShSh14} ahptwphipeotwjjjjjahehofahewpthoiahteipahiophtaephoatehpaehipaehtwphatewhafdjaiethpawehpht
+
+\subsection{Dataset Insights}
+Given is set of
+
+\section{Matrix Factorization}
+One way to solve such task uses matrix factorization. The idea is the following: given an ratings matrix $R\in\mathbb{R}^{m\times n}$. We assume that $rank(R)\ll min(m,n)$. Then this matrix can be decomposed in two smaller matrices such that 
+$$R\approx UV^T$$ holds where $U\in\mathbb{R}^{m\times k}$ and $V\in\mathbb{R}^{n\times k}$ given that $\rank(R)=k$. Such method is called latent matrix factorization.
+
+As stated in \cite{KoBeVo09} one common way for doing this is the usage of singular value decomposition (SVD) which works fine with dense matrices. In our case the matrix $R$ is highly sparse and SVD wouldn't work. Instead we can formulate the problem as optimization problem with respect to the matrices $U$ and $V$ as described in \cite{Ag16}. We can use the following objective function: 
+$$\min_{U,V} \frac{1}{2}\norm{R-UV^T}^2$$ 
+$\norm{\cdot}^2$ refers here to the squared Frobenius norm which means $$\norm{A}^2=\sum_{i,j}A_{i,j}^2$$.
+
+In the easiest variant of such optimization problem we assume that there are no further constraints. We refer to this variant as unconstrained matrix factorization UMF and we can solve this with gradient descent.
+
+\subsection{Gradient Descent}
+The gradient method is an iterative approach to find an $x$ that minimizes a differentiable function $f$ starting with an given $x_0$. For this we calculated the gradient of the function. This points in the direction of the highest ascent of this function. To minimize the function we go small steps in the opposite direction. This can done with an iterative approach as described in \ref{algo:gd}. 
+
+\begin{algorithm}[H]
+	\caption{gradient descent}
+	\label{algo:gd}
+	\KwData{starting point $x_0$, learning rate $\eta$}
+	\KwResult{$x$ that minimizes $f$}
+
+	\While{no convergence}{
+		calculate $\nabla f$\;
+		update $x \leftarrow x - \eta \nabla f$ \;
+	}
+\end{algorithm}
+For an more detailed description refer to \cite{ShSh14}.
+
+
+\subsection{Applying Gradient Descent on UMF} 
+We want to apply the gradient descent approach on the unconstrained matrix factorization problem. For this we need to calculate the gradient of the objective function. We've observed only a few entries of the ratings matrix $R$. Our objective function is undefined. To fix this we set the unobserved entries in $UV^T$ to zero. 
+Now let us define $E:=R-UV^T$ as the error matrix. Again all unobserved entries in this matrix are zero and don't affect the loss function. Our objective function becomes now $\min\frac{1}{2}\norm{E}^2$.
+We can now calculate the gradient.
+First with respect to the matrix U
+\[\nabla_{U_{i,\beta}} \frac{1}{2}\norm{E}^2 = \nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}E_{i,j}^2=\nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2=
+\nabla_{U_{\alpha,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-\sum_{l}^k U_{i,l}V^T_{l,j})^2\]
+\[=\sum_{i,j}(R_{i,j}-\sum_{l}^k U_{i,l}V^T_{l,j})(-V^T_{\beta,j})=\sum_{i,j}(E_{i,j})(-V_{j,\beta})=-EV_{i,\beta} \]
+Symmetrical we can derive the objective function with respect to V and get 
+\[\nabla_{V_{j,\alpha}} \frac{1}{2}\norm{E}^2 = \nabla_{V_{j,\alpha}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2=
+=\sum_{i,j}(E_{i,j})(-U_{i,\alpha})=-E^TU_{i,\alpha} \]
+
+As you can see those gradients 
+
+\section{Implementation Details}
+
+\subsection{Data Preprocessing}
+For an easier implementation I decided to map the ratings from $\{0,1,2,3,4\}$ to $\{1,2,3,4,5\}$ using the feature map $\phi:\mathbf{R}\rightarrow\mathbf{R};x\rightarrow x + 1$. With this preprocessing missing ratings can be distinguished from the rating 0.
+
+
+
+\section{Model Evaluation And Parameter Tuning}
+
+\bibliography{references}{}
+\bibliographystyle{alpha}
+\end{document}
