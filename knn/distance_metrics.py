@@ -41,7 +41,8 @@ class SimiliarityMatrix:
         else:
             mean_free_data = self.data.T - mean
         for u in range(0,self.data.shape[self.axis]):
-            print(f"Running {u} of {self.data.shape[self.axis]}")
+            if self.verbose:
+                print(f"Running {u} of {self.data.shape[self.axis]}")
             for v in range(u + 1, self.data.shape[self.axis]):
                 if self.method == "pearson":
                     if self.axis == 0:
