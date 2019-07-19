@@ -48,7 +48,7 @@ class UMF:
                 E = (self.train_full - R_predicted)
                 E[np.nonzero(self.train_full == 0)] = 0
                 if verbosity >= 1:
-                    print(f"Cycle: {i} of {self.max_run} error(step_size): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
+                    print(f"Cycle: {i} of {self.max_run} error(frobenius): {0.5* np.abs(np.sum(E*E))} error(step_size): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
 
                 if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
                     if verbosity >= 1:
@@ -73,7 +73,7 @@ class UMF:
                 E[np.nonzero(self.train_full == 0)] = 0
 
                 if verbosity >= 1:
-                    print(f"Cycle: {i} of {self.max_run} error(step_size): {0.5* np.abs(np.sum(E*E))}")
+                    print(f"Cycle: {i} of {self.max_run} error(frobenius): {0.5* np.abs(np.sum(E*E))} error(stepsize): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
 
 #                if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
                 if 0.5*np.sum(E*E) <= self.epsilon:

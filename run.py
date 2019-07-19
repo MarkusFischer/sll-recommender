@@ -3,6 +3,7 @@ import os
 import numpy as np
 from scipy import sparse
 from sklearn import model_selection as ms
+from sklearn.decomposition import nmf as nmf
 
 #todo Konstanten auslagern
 import metrices.accuracy as accuracy
@@ -21,28 +22,50 @@ print("data preprocessing")
 X_train_raw[:,2] += 1
 
 print("fitting with sgd")
-#classificator_sgd = UMF(X_train_raw, rank=5, random_state=2, eta=5e-6, regularization=None, epsilon=1, max_run=1000, method="sgd")
-#classificator_sgd.fit(verbosity=1)
+classificator_sgd = UMF(X_train_raw, rank=45, random_state=42, eta=5e-5, regularization=0.7, epsilon=1, max_run=200, method="gd")
+classificator_sgd.fit(verbosity=1)
+
+
+print("fitting with NMF of sklearn")
+#predictor = nmf.NMF(n_components=150,
+#                    solver='mu',
+#                    verbose=True,
+#                    max_iter=1000,
+#                    alpha=0.5,
+#                    tol=1e-10)
+#res = predictor.fit_transform(convert_sparse_coo_to_full_matrix(X_train_raw))
+#result = predictor.inverse_transform(res)
+#print(result.shape)
+#predictions = result[X_test_raw[:,0],X_test_raw[:,1]]
+
 
 print("fitting with NMF")
-recommender = NMF(X_train_raw, rank=5, random_state=42, regularization=None, epsilon=1000, max_run=200)
-recommender.fit(verbosity=1)
+#recommender = NMF(X_train_raw, rank=30, random_state=42, regularization=None, epsilon=1000, max_run=200)
+#recommender.fit(verbosity=1)
 
-#print("fitting with classic gd")
-#classificator = UMF(X_train_raw, rank=5 , random_state=2, eta=0.000005, regularization=None, epsilon=0.5, max_run=500)
+print("fitting with classic gd")
+#classificator = UMF(X_train_raw, rank=30 , random_state=2, eta=0.000005, regularization=0.7, epsilon=0.5, max_run=750)
 #classificator.fit(verbosity=1)
 
 
 
-#rmse_gd = accuracy.rmse(X_test_raw[:,2], classificator.predict(X_test_raw[:,0:1])-1)
-#mae_gd = accuracy.mae(X_test_raw[:,2], classificator.predict(X_test_raw[:,0:1])-1)
+#rmse_gd = accuracy.rmse(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
+#mae_gd = accuracy.mae(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
 #print(f"RMSE gd: {rmse_gd}")
 #print(f"MAE gd: {mae_gd}")
 
-rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
-mae_sgd = accuracy.mae(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+#rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+rmse_sgd = accuracy.rmse(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
+#mae_sgd = accuracy.mae(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+mae_sgd = accuracy.mae(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
 print(f"RMSE sgd: {rmse_sgd}")
 print(f"MAE sgd: {mae_sgd}")
+
+#rmse_sklearn = accuracy.rmse(X_test_raw[:,2],predictions-1)
+#mae_sklearn = accuracy.mae(X_test_raw[:,2],predictions-1)
+#print(f"RMSE sklearn: {rmse_sklearn}")
+#print(f"MAE sklearn: {mae_sklearn}")
+
 
 
 #print("item based")
@@ -58,7 +81,7 @@ print(f"MAE sgd: {mae_sgd}")
 
 print("saving to file")
 Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
-bayes = recommender.predict(Xq)
+bayes = classificator_sgd.predict(Xq)
 #for line in Xq.tolist():
 #    bayes.append(classificator.predict(line[0], line[1]))
 bayes = np.array(bayes)-1
