@@ -107,7 +107,7 @@ class NMF:
                     random_state=random.randint(1, 101),
                     regularization=None,
                     epsilon=1,
-                    eta = 10**(-9),
+                    stability = 10**(-9),
                     max_run=1_000,
                 ):
         if X_train.shape[1] != 3:
@@ -119,11 +119,11 @@ class NMF:
         self.rank = rank
         self.random_state=random_state
         self.epsilon = epsilon
+        self.stability = stability
         self.max_run = max_run
         self.regularization = regularization
         np.random.seed(self.random_state)
         self.matrix = None
-        self.eta = eta
 
     def fit(self, verbosity=0, validation_set = None):
         if verbosity == 2 and validation_set is None:
@@ -132,6 +132,9 @@ class NMF:
             print("initialize U and V with random values")
         U = np.random.rand(self.m, self.rank)
         V = np.random.rand(self.n, self.rank)
+        U_min = U
+        V_min = V
+        min_error = float("inf")
         for i in range(0, self.max_run):
             R_predicted = np.matmul(U, V.T)
             E = self.train_full - R_predicted
@@ -142,13 +145,13 @@ class NMF:
                 break
             U_old = U
             V_old = V
-            U_delta_numerator = np.multiply(U_old, np.matmul(self.train_full,V_old))
-            U_delta_denumerator = np.matmul(U_old, np.matmul(V.T, V)) + self.eta
-            U = np.divide(U_delta_numerator, U_delta_denumerator)
+            U_delta_numerator = U_old * np.matmul(self.train_full,V)
+            U_delta_denomerator = np.matmul(U_old, np.matmul(V.T, V)) + self.stability
+            U = U_delta_numerator / U_delta_denomerator
 
-            V_delta_numerator = np.multiply(V_old, np.matmul(self.train_full.T, U_old))
-            V_delta_denumerator = np.matmul(V_old, np.matmul(U.T, U)) + self.eta
-            V = np.divide(V_delta_numerator, V_delta_denumerator)
+            V_delta_numerator = V_old * np.matmul(self.train_full.T, U)
+            V_delta_denomerator = np.matmul(V_old, np.matmul(U.T, U)) + self.stability
+            V = V_delta_numerator/V_delta_denomerator
         self.matrix = np.matmul(U,V.T)
 
     def predict(self, coords):

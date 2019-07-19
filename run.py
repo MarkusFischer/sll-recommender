@@ -22,8 +22,8 @@ print("data preprocessing")
 X_train_raw[:,2] += 1
 
 print("fitting with sgd")
-classificator_sgd = UMF(X_train_raw, rank=45, random_state=42, eta=5e-5, regularization=0.7, epsilon=1, max_run=200, method="gd")
-classificator_sgd.fit(verbosity=1)
+#classificator_sgd = UMF(X_train_raw, rank=45, random_state=42, eta=5e-5, regularization=0.7, epsilon=1, max_run=200, method="gd")
+#classificator_sgd.fit(verbosity=1)
 
 
 print("fitting with NMF of sklearn")
@@ -40,8 +40,8 @@ print("fitting with NMF of sklearn")
 
 
 print("fitting with NMF")
-#recommender = NMF(X_train_raw, rank=30, random_state=42, regularization=None, epsilon=1000, max_run=200)
-#recommender.fit(verbosity=1)
+recommender = NMF(X_train_raw, rank=30, random_state=42, regularization=None, epsilon=1000, stability=10e-9, max_run=1300)
+recommender.fit(verbosity=1)
 
 print("fitting with classic gd")
 #classificator = UMF(X_train_raw, rank=30 , random_state=2, eta=0.000005, regularization=0.7, epsilon=0.5, max_run=750)
@@ -54,10 +54,10 @@ print("fitting with classic gd")
 #print(f"RMSE gd: {rmse_gd}")
 #print(f"MAE gd: {mae_gd}")
 
-#rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
-rmse_sgd = accuracy.rmse(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
-#mae_sgd = accuracy.mae(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
-mae_sgd = accuracy.mae(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
+rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+#rmse_sgd = accuracy.rmse(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
+mae_sgd = accuracy.mae(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+#mae_sgd = accuracy.mae(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
 print(f"RMSE sgd: {rmse_sgd}")
 print(f"MAE sgd: {mae_sgd}")
 
@@ -81,13 +81,13 @@ print(f"MAE sgd: {mae_sgd}")
 
 print("saving to file")
 Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
-bayes = classificator_sgd.predict(Xq)
+#bayes = classificator_sgd.predict(Xq)
 #for line in Xq.tolist():
 #    bayes.append(classificator.predict(line[0], line[1]))
-bayes = np.array(bayes)-1
-Xq_bayes = np.column_stack((Xq,bayes))
-np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
-           delimiter=",", newline="\n", encoding="utf-8")
+#bayes = np.array(bayes)-1
+#Xq_bayes = np.column_stack((Xq,bayes))
+#np.savetxt("qualifying_bayes_first.csv", Xq_bayes.astype(np.int),
+#           delimiter=",", newline="\n", encoding="utf-8")
 
 
 
