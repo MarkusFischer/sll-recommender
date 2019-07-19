@@ -27,6 +27,6 @@ for rank in ranks:
 
     rmse = accuracy.rmse(X_test_raw[:,2], factorizer.predict(X_test_raw[:,(0,1)])-1)
     print(f"RMSE for rank {rank}: {rmse}")
-    
+
     filename = "umf_rank_" + rank + ".pyc"
     pickle.dump(factorizer, open(os.path.join("trained_models",filename), "wb"))
