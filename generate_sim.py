@@ -14,7 +14,7 @@ X_validate_raw, X_test_raw = ms.train_test_split(X_remaining_raw, test_size=0.1,
 print("data preprocessing")
 X_train_raw[:,2] += 1
 
-data = convert_sparse_coo_to_full_matrix(X_train_raw)
+data = convert_sparse_coo_to_full_matrix(X_train_raw).toarray()
 
 print("calculate pearson similarity matrix for user")
 pearson = SimiliarityMatrix(data,verbose=True)
