@@ -40,26 +40,26 @@ print("fitting with NMF of sklearn")
 
 
 print("fitting with NMF")
-recommender = NMF(X_train_raw, rank=30, random_state=42, regularization=None, epsilon=1000, stability=10e-9, max_run=1300)
-recommender.fit(verbosity=1)
+#recommender = NMF(X_train_raw, rank=30, random_state=42, regularization=None, epsilon=1000, stability=10e-9, max_run=1300)
+#recommender.fit(verbosity=1)
 
 print("fitting with classic gd")
-#classificator = UMF(X_train_raw, rank=30 , random_state=2, eta=0.000005, regularization=0.7, epsilon=0.5, max_run=750)
-#classificator.fit(verbosity=1)
+classificator = UMF(X_train_raw, rank=15, random_state=2, eta=0.000005, regularization=0.7, epsilon=0.5, max_run=200, verbose=True)
+classificator.fit(verbosity=1)
 
 
 
-#rmse_gd = accuracy.rmse(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
-#mae_gd = accuracy.mae(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
-#print(f"RMSE gd: {rmse_gd}")
-#print(f"MAE gd: {mae_gd}")
+rmse_gd = accuracy.rmse(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
+mae_gd = accuracy.mae(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
+print(f"RMSE gd: {rmse_gd}")
+print(f"MAE gd: {mae_gd}")
 
-rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+#rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
 #rmse_sgd = accuracy.rmse(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
-mae_sgd = accuracy.mae(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
+#mae_sgd = accuracy.mae(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
 #mae_sgd = accuracy.mae(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
-print(f"RMSE sgd: {rmse_sgd}")
-print(f"MAE sgd: {mae_sgd}")
+#print(f"RMSE sgd: {rmse_sgd}")
+#print(f"MAE sgd: {mae_sgd}")
 
 #rmse_sklearn = accuracy.rmse(X_test_raw[:,2],predictions-1)
 #mae_sklearn = accuracy.mae(X_test_raw[:,2],predictions-1)

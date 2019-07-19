@@ -11,13 +11,14 @@ class UMF:
     def __init__(self,
                     X_train,
                     rank=10,
-                    random_state=42,
+                    random_state=None,
                     regularization=0,
                     eta=0.2,
                     epsilon=1,
                     max_run=1_000,
                     method="gd",
-                    convergence_check="step"
+                    convergence_check="step",
+                    verbose=False
                 ):
         if X_train.shape[1] != 3:
             raise Exception("Training set matrix has wrong shape!")
@@ -59,36 +60,40 @@ class UMF:
         self.U = np.zeros((self.m, self.rank))
         self.V = np.zeros((self.n, self.rank))
 
+        self.learn_insights = []
+        self.verbose = verbose
+
     def fit(self, verbosity=0, validation_set=None):
-        if verbosity == 2 and validation_set is None:
-            raise Exception("For usage of verbosity level 2 an validation set is required")
-        if verbosity >= 1:
-            print("initialize U and V with random values")
+        if self.verbose:
+            print("Initializing U and V with random values")
         U = np.random.rand(self.m, self.rank)
         V = np.random.rand(self.n, self.rank)
 
         if self.method == "gd":
             E_old = np.zeros((self.m,self.n))
-            for i in range(1, self.max_run):
+            for cycle in range(self.max_run + 1):
                 R_predicted = np.matmul(U, V.T)
                 E = (self.train_full - R_predicted)
                 E[np.nonzero(self.train_full == 0)] = 0
-                if verbosity >= 1:
-                    print(f"Cycle: {i} of {self.max_run} error(frobenius): {0.5* np.abs(np.sum(E*E))} error(step_size): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
 
-                if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
-                    if verbosity >= 1:
-                        print("Convergency reached!")
+                frobenius_error = 0.5* np.abs(np.sum(E*E))
+                last_step = 0.5 * np.abs(np.sum(E*E) - np.sum(E_old**2))
+
+                self.learn_insights.append((cycle, frobenius_error, last_step))
+
+                if self.verbose and cycle % 10 == 0:
+                    print(f"{cycle} cycles (of {self.max_run}) error (frobenius): {frobenius_error} last step size: {last_step}")
+
+                if (last_step <= self.epsilon and self.convergence_check == "step") or (
+                        frobenius_error <= self.epsilon and self.convergence_check == "value"):
+                    if self.verbose:
+                        print(f"Convergence reached after {cycle} cycles! Error (frobenius): {frobenius_error} last step size: {last_step}")
                     break
 
                 U_old = U
                 V_old = V
-                if self.regularization is not None:
-                    U = U - self.eta * self.regularization * U_old + self.eta * np.matmul(E, V_old)
-                    V = V - self.eta * self.regularization * V_old + self.eta * np.matmul(E.T, U_old)
-                else:
-                    U = U_old + self.eta * np.matmul(E, V_old)
-                    V = V_old + self.eta * np.matmul(E.T, U_old)
+                U = U - self.eta * self.regularization * U_old + self.eta * np.matmul(E, V_old)
+                V = V - self.eta * self.regularization * V_old + self.eta * np.matmul(E.T, U_old)
                 E_old = E
 
         elif self.method == "sgd":
@@ -117,6 +122,9 @@ class UMF:
                 U[i,:] = U_old[i,:] + self.eta * E[i,j] * V_old[j,:]
                 V[j, :] = V_old[j, :] + self.eta * E[i, j] * U_old[i,:]
                 E_old = E
+
+        self.U = U
+        self.V = V
         self.matrix = np.matmul(U, V.T)
 
     def predict(self, coords):
