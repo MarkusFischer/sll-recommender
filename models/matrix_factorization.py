@@ -1,3 +1,4 @@
+import numbers
 import random
 
 import numpy as np
@@ -7,31 +8,56 @@ from utility.matrices import convert_sparse_coo_to_full_matrix
 
 
 class UMF:
-    def __init__(self,          #TODO check each parameter for correct type
+    def __init__(self,
                     X_train,
                     rank=10,
-                    random_state=random.randint(1, 101),
-                    regularization=None,
+                    random_state=42,
+                    regularization=0,
                     eta=0.2,
                     epsilon=1,
                     max_run=1_000,
-                    method="GD"
+                    method="gd",
+                    convergence_check="step"
                 ):
         if X_train.shape[1] != 3:
-            raise Exception("wrong shape")
+            raise Exception("Training set matrix has wrong shape!")
         self.train = X_train
         self.train_full = convert_sparse_coo_to_full_matrix(X_train).toarray()
         self.m = self.train_full.shape[0]
         self.n = self.train_full.shape[1]
+
+
+        if type(rank) != int or rank <= 0:
+            raise Exception("Rank must be an positiv integer value!")
         self.rank = rank
-        self.random_state=random_state
+        if random_state is not None:
+            np.random.seed(random_state)
+
+        if not isinstance(eta, numbers.Number) and eta.lower() != "lsearch":
+            raise Exception("Eta must be an numeric value or \"lsearch\" for searching with line_search for perfect eta!")
         self.eta = eta
+
+        if not isinstance(epsilon, numbers.Number):
+            raise Exception("Epsilon must be an numeric value!")
         self.epsilon = epsilon
+        if type(max_run) != int or rank <= 0:
+            raise Exception("Maximum run count must be an positiv integer value!")
         self.max_run = max_run
+        if not isinstance(regularization, numbers.Number) or regularization < 0:
+            raise Exception("The regularization parameter must be an non negative integer value!")
         self.regularization = regularization
-        np.random.seed(self.random_state)
+
+        if method.lower() != "gd" and method.lower() != "sgd":
+            raise Exception(f"{method} is not an valid learning algorithm. Currently only gradient descent and stochastic gradient descent are supported!")
         self.method = method.lower()
-        self.matrix = None
+
+        if convergence_check.lower() != "step" and convergence_check.lower() != "value":
+            raise Exception(f"{convergence_check} is not an supported convergence criteria. Currently only step size and absolut value are supported!")
+        self.convergence_check = convergence_check.lower()
+
+        self.matrix = np.zeros(self.train_full.shape)
+        self.U = np.zeros((self.m, self.rank))
+        self.V = np.zeros((self.n, self.rank))
 
     def fit(self, verbosity=0, validation_set=None):
         if verbosity == 2 and validation_set is None:
@@ -91,8 +117,6 @@ class UMF:
                 U[i,:] = U_old[i,:] + self.eta * E[i,j] * V_old[j,:]
                 V[j, :] = V_old[j, :] + self.eta * E[i, j] * U_old[i,:]
                 E_old = E
-        else:
-            raise Exception(f"{self.method} is not an valid learning algorithm. Currently only gradient descent and stochastic gradient descent are supported")
         self.matrix = np.matmul(U, V.T)
 
     def predict(self, coords):
