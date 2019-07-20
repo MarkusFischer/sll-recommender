@@ -1,3 +1,7 @@
+# pretrained models/ similarity matrices
+!trained_models/
+!*_user_*_sim.pyc
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
