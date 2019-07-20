@@ -17,7 +17,8 @@ user_sim.fit()
 item_sim = SimiliarityMatrix(example, axis=1)
 item_sim.fit()
 classificator = kNN(example, user_sim.similarity, item_sim.similarity, user_sim.mean,k=2)
-classificator.classify(np.array([[1,2],[2,0],[2,5],[4,1]]),axis=0)
+#example_res = classificator.classify(np.array([[1,2],[2,0],[2,5],[4,1]]),axis=0)
+example_res = classificator.classify(np.array([[2,0]]), axis=0)
 
 user = pickle.load(open("user_pearson_sim.pyc", "rb"))
 mean = pickle.load(open("mean_user_pearson_sim.pyc", "rb"))
@@ -37,5 +38,5 @@ X_train_raw[:,2] += 1
 data = convert_sparse_coo_to_full_matrix(X_train_raw).toarray()
 
 useful = kNN(data, user, item, mean, k=5)
-y_hat = useful.classify(X_remaining_raw[:,(0,1)],axis=0)
-rmse_knn = accuracy.rmse(X_remaining_raw[:,2], y_hat)
+y_hat = useful.classify(X_remaining_raw[0:2,(0,1)],axis=0)
+rmse_knn = accuracy.rmse(X_remaining_raw[0:2,2], y_hat-1)
