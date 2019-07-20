@@ -1,5 +1,5 @@
 %\documentclass[twocolumn]{scrartcl}
-\documentclass[]{scrartcl}
+\documentclass[DIV=12]{scrartcl}
 \usepackage[pdftex]{hyperref}
 \usepackage{cite}
 \usepackage{amsmath}
@@ -19,19 +19,15 @@
 
 \maketitle
 \begin{abstract}
-Here goes the abstract aphiohtpaohiohaetoihteojfjawoiarwtend ahptwphipeotwjjjjjahehofahewpthoiahteipahiophtaephoatehpaehipaehtwphatewhafdjaiethpawehpht
+Here goes the abstract
 \end{abstract}
 
 \section{Introduction}
-
 \section{Task}
-aphiohtpaohiohaetoihteojfjawoiarwtend~\cite{ShSh14} ahptwphipeotwjjjjjahehofahewpthoiahteipahiophtaephoatehpaehipaehtwphatewhafdjaiethpawehpht
-
 \subsection{Dataset Insights}
-Given is set of
 
 \section{Matrix Factorization}
-One way to solve such task uses matrix factorization. The idea is the following: given an ratings matrix $R\in\mathbb{R}^{m\times n}$. We assume that $rank(R)\ll min(m,n)$. Then this matrix can be decomposed in two smaller matrices such that 
+One way to solve such task uses matrix factorization. The idea is the following: given an ratings matrix $R\in\mathbb{R}^{m\times n}$. We assume that $\rank(R)\ll\min(m,n)$. Then this matrix can be decomposed in two smaller matrices such that 
 $$R\approx UV^T$$ holds where $U\in\mathbb{R}^{m\times k}$ and $V\in\mathbb{R}^{n\times k}$ given that $\rank(R)=k$. Such method is called latent matrix factorization.
 
 As stated in \cite{KoBeVo09} one common way for doing this is the usage of singular value decomposition (SVD) which works fine with dense matrices. In our case the matrix $R$ is highly sparse and SVD wouldn't work. Instead we can formulate the problem as optimization problem with respect to the matrices $U$ and $V$ as described in \cite{Ag16}. We can use the following objective function: 
@@ -46,15 +42,16 @@ The gradient method is an iterative approach to find an $x$ that minimizes a dif
 \begin{algorithm}[H]
 	\caption{gradient descent}
 	\label{algo:gd}
-	\KwData{starting point $x_0$, learning rate $\eta$}
+	\KwData{starting point $x^0$, learning rate $\eta > 0$}
 	\KwResult{$x$ that minimizes $f$}
 
 	\While{no convergence}{
 		calculate $\nabla f$\;
-		update $x \leftarrow x - \eta \nabla f$ \;
+		update $x^{(n+1)} \leftarrow x^{(n)} - \eta \nabla f$ \;
 	}
 \end{algorithm}
 For an more detailed description refer to \cite{ShSh14}.
+Be aware that this algorithm shows divergence for to large $\eta$. 
 
 
 \subsection{Applying Gradient Descent on UMF} 
@@ -63,13 +60,17 @@ Now let us define $E:=R-UV^T$ as the error matrix. Again all unobserved entries 
 We can now calculate the gradient.
 First with respect to the matrix U
 \[\nabla_{U_{i,\beta}} \frac{1}{2}\norm{E}^2 = \nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}E_{i,j}^2=\nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2=
-\nabla_{U_{\alpha,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-\sum_{l}^k U_{i,l}V^T_{l,j})^2\]
+\nabla_{U_{\alpha,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-\sum_{l=1}^k U_{i,l}V^T_{l,j})^2\]
 \[=\sum_{i,j}(R_{i,j}-\sum_{l}^k U_{i,l}V^T_{l,j})(-V^T_{\beta,j})=\sum_{i,j}(E_{i,j})(-V_{j,\beta})=-EV_{i,\beta} \]
 Symmetrical we can derive the objective function with respect to V and get 
-\[\nabla_{V_{j,\alpha}} \frac{1}{2}\norm{E}^2 = \nabla_{V_{j,\alpha}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2=
-=\sum_{i,j}(E_{i,j})(-U_{i,\alpha})=-E^TU_{i,\alpha} \]
+\[\nabla_{V_{j,\alpha}} \frac{1}{2}\norm{E}^2 = \nabla_{V_{j,\alpha}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2
+=\sum_{i,j}(E_{i,j})(-U_{i,\alpha})=-E^TU_{j,\alpha} \]
 
-As you can see those gradients 
+As you can see those gradients can be easily vectorized and so we get $\nabla_U \frac{1}{2}\norm{E}^2=-EV$ and  $\nabla_V \frac{1}{2}\norm{E}^2=-E^TU$. Since the learning rate $\eta$ needs to be positive we get the following update rules: $U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)}$ and $V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)}$. With this update rules we can now use \ref{algo:gd} to minimize our objective function. Now we have only to decide us for a convergence criteria. One possibility is that the value of our objective function should be below a certain value. But since the gradient descent finds only a local, previous unknown, minimum it is hard to decide when to stop. It is therefore better to use other criteria. In my implementation I stop when the difference of the objective function value between two iterations is below a certain limit. Formally the algorithm stops when $|\frac{1}{2}\norm{E^{(n)}}^2-\frac{1}{2}\norm{E^{(n+1)}}^2|=\frac{1}{2}|\sum_{i,j}(E_{i,j}^{(n)})^2-(E_{i,j}^{(n+1)})^2|\leq\epsilon$ holds.
+
+\subsection{Regularization to Prevent Overfitting}
+In order to prevent overfitting it is common to add a regularization term to the objective function. As stated in \cite{Gi19} this may increase the bias but it also may decrease the variance of the estimator. This is known as Bias-Variance trade-of an can lead to a better predictor. For our matrix factorization problem we can  add the regularization terms $\frac{\lambda}{2}\norm{U}^2$ and $\frac{\lambda}{2}\norm{V}^2$ for $\lambda \geq 0$ as recommended in \cite{Ag16}.
+Plugging this into our objective function we get $\min_{U,V} \frac{1}{2}\norm{E}^2 + \frac{\lambda}{2}\norm{U}^2 + \frac{\lambda}{2}\norm{V}^2$. Calculating the gradient of this function gives us the following update rules: $U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)} - \eta\lambda U^{(i)}$ and $V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)} - \eta\lambda V^{(i)}$.
 
 \section{Implementation Details}
 
