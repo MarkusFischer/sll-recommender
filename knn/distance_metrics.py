@@ -54,18 +54,18 @@ class SimiliarityMatrix:
             for v in range(u + 1, self.data.shape[self.axis]):
                 if self.method == "pearson":
                     if self.axis == 0:
-                        items_u = mean_free_data[u,:][data_bin[u,:] == data_bin[v,:]]
-                        items_v = mean_free_data[v, :][data_bin[u,:] == data_bin[v,:]]
+                        items_u = mean_free_data[u,:][np.logical_and(data_bin[u,:] == data_bin[v,:], data_bin[u,:] == 1)]
+                        items_v = mean_free_data[v, :][np.logical_and(data_bin[u,:] == data_bin[v,:], data_bin[u,:] == 1)]
                     else:
-                        items_u = mean_free_data[:,u][data_bin[:,u] == data_bin[:,v]]
-                        items_v = mean_free_data[:,v][data_bin[:,u] == data_bin[:,v]]
+                        items_u = mean_free_data[:,u][np.logical_and(data_bin[:,u] == data_bin[:,v],1 == data_bin[:,u])]
+                        items_v = mean_free_data[:,v][np.logical_and(data_bin[:,u] == data_bin[:,v],1 == data_bin[:,u])]
                 else:
                     if self.axis == 0:
-                        items_u = self.data[u,:][data_bin[u,:] == data_bin[v,:]]
-                        items_v = self.data[v, :][data_bin[u,:] == data_bin[v,:]]
+                        items_u = self.data[u,:][np.logical_and(data_bin[u,:] == data_bin[v,:], data_bin[u,:] == 1)]
+                        items_v = self.data[v, :][np.logical_and(data_bin[u,:] == data_bin[v,:], data_bin[u,:] == 1)]
                     else:
-                        items_u = self.data[:,u][data_bin[:,u] == data_bin[:,v]]
-                        items_v = self.data[:,v][data_bin[:,u] == data_bin[:,v]]
+                        items_u = self.data[:,u][np.logical_and(data_bin[:,u] == data_bin[:,v],1 == data_bin[:,u])]
+                        items_v = self.data[:,v][np.logical_and(data_bin[:,u] == data_bin[:,v],1 == data_bin[:,u])]
                 self.similarity[u, v] = np.sum(items_u * items_v) / (10e-9 +
                             np.sqrt(np.sum(items_u ** 2)) * np.sqrt(np.sum(items_v ** 2)))
         lower_indices = np.tril_indices(self.data.shape[self.axis],-1)
@@ -83,5 +83,5 @@ if __name__ == "__main__":
     example_bin[example != 0] = 1
     entry_count = np.sum(example_bin, axis=1)
     mean = row_sum/entry_count
-    psm = SimiliarityMatrix(example,axis=1)
+    psm = SimiliarityMatrix(example,axis=0,method="cosine")
     psm.fit()

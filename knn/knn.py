@@ -10,7 +10,8 @@ class kNN:
                  user_similarity,
                  item_similarity,
                  row_mean=None,
-                 k=3):
+                 k=3,
+                 alpha = 0.5):
         self.data = data
 
         self.data_bin = np.zeros_like(data)
@@ -27,13 +28,22 @@ class kNN:
         else:
             self.row_mean = np.zeros((data.shape[0],1))
         self.data_mean_free = data - row_mean
+        self.data_mean_free[data==0]=0
         if not isinstance(k, numbers.Number) or k <= 0:
             raise Exception(f"K value {k} is to small or not a number!")#todo check if not int
         self.k = k
 
+        if not isinstance(alpha, numbers.Number) or alpha < 0 or alpha > 1:
+            raise Exception("Alpha is not a numeric value in [0,1]")
+        self.alpha = alpha
+
 
     def classify(self,coords,axis=None):
-        if axis == 0:
+        if axis is None:
+            user_based = self.classify(coords=coords,axis=0)
+            item_based = self.classify(coords=coords,axis=1)
+            return self.alpha * user_based + (1-self.alpha)*item_based
+        elif axis == 0:
             sim = []
             ratings = []
             for (u,j) in coords[:,(0,1)]:
@@ -51,5 +61,28 @@ class kNN:
             denom = np.sum(np.abs(sim),axis=1)
             result = np.divide(num,denom+10e-9)
             return np.add(self.row_mean[coords[:,0]].reshape(1,-1), result.reshape(1,-1))
+        elif axis == 1:
+            sim = []
+            ratings = []
+            for (u, j) in coords[:, (0, 1)]:
+                try:
+                    nearest = np.argpartition(self.item_similarity[j, (self.data_bin[u,:] == 1)], -self.k)[-self.k:]
+                    nearest = nearest[nearest != j]
+                    item_sim = self.item_similarity[j, self.data_bin[u,:] == 1][nearest]
+                    data = self.data_mean_free[u, self.data_bin[u,:] == 1][nearest]
+                except:
+                    item_sim = self.item_similarity[j, self.data_bin[u,:] == 1]
+                    data = self.data_mean_free[u, self.data_bin[u,:] == 1]
+                item_sim.resize(self.k)
+                data.resize(self.k)
+                sim.append(item_sim)
+                ratings.append(data)
+            sim = np.array(sim)
+            ratings = np.array(ratings)
+            num = np.sum(sim * ratings, axis=1)
+            denom = np.sum(np.abs(sim), axis=1)
+            result = np.divide(num, denom + 10e-9)
+            return result.reshape(1, -1)
+            pass
 
 
