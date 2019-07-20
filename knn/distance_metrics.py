@@ -39,13 +39,13 @@ class SimiliarityMatrix:
         if self.mean_method == "row":
             row_sum = np.sum(self.data, axis=1)
             entry_count = np.sum(data_bin, axis=1)
-            mean = (row_sum / entry_count).reshape(-1,1)
+            mean = (row_sum / (entry_count+10e-9)).reshape(-1,1)
             self.mean = mean
             mean_free_data = self.data - mean
         else:
             row_sum = np.sum(self.data, axis=0)
             entry_count = np.sum(data_bin, axis=0)
-            mean = (row_sum / entry_count).reshape(-1, 1)
+            mean = (row_sum / (entry_count+10e-9)).reshape(-1, 1)
             self.mean = mean
             mean_free_data = (self.data.T - mean).T
         for u in range(0,self.data.shape[self.axis]):
@@ -66,7 +66,7 @@ class SimiliarityMatrix:
                     else:
                         items_u = self.data[:,u][data_bin[:,u] == data_bin[:,v]]
                         items_v = self.data[:,v][data_bin[:,u] == data_bin[:,v]]
-                self.similarity[u, v] = np.sum(items_u * items_v) / (
+                self.similarity[u, v] = np.sum(items_u * items_v) / (10e-9 + 
                             np.sqrt(np.sum(items_u ** 2)) * np.sqrt(np.sum(items_v ** 2)))
         lower_indices = np.tril_indices(self.data.shape[self.axis],-1)
         self.similarity[lower_indices] = self.similarity.T[lower_indices]
