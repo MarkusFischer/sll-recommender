@@ -33,6 +33,6 @@ pearson.fit()
 pearson.save("item_pearson_sim.pyc")
 
 print("calculate cosine similarity matrix for user")
-cosine = SimiliarityMatrix(data, axis=0,method="cosine",verbose=True)
+cosine = SimiliarityMatrix(data, axis=1,method="cosine",verbose=True)
 cosine.fit()
 cosine.save("item_cosine_sim.pyc")
