@@ -49,8 +49,7 @@ class kNN:
             ratings = np.array(ratings)
             num = np.sum(sim*ratings,axis=1)
             denom = np.sum(np.abs(sim),axis=1)
-            result = np.divide(num,denom)
-            result = np.nan_to_num(result)
+            result = np.divide(num,denom+10e-9)
             return np.add(self.row_mean[coords[:,0]].reshape(1,-1), result.reshape(1,-1))
 
 

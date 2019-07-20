@@ -15,6 +15,8 @@ from models.matrix_factorization import UMF
 
 from utility.matrices import convert_sparse_coo_to_full_matrix
 
+plt.xkcd()
+
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
 X_raw[:,2] = 1
 X_raw = convert_sparse_coo_to_full_matrix(X_raw).toarray()
