@@ -36,14 +36,21 @@ class kNN:
         if axis == 0:
             sim = []
             ratings = []
-            for (u,j) in coords[:,(0,1)]:#todo sieh nach ob die item j überhaupt bewertet haben
-                nearest = np.argpartition(self.user_similarity[u,:], -(self.k+1))[-(self.k+1):]
+            for (u,j) in coords[:,(0,1)]:
+                nearest = np.argpartition(self.user_similarity[u,(self.data_bin[:,j]==1)], -(self.k))[-(self.k):]
                 nearest = nearest[nearest != u]
-                sim.append(self.user_similarity[u,nearest])
-                ratings.append(self.data_mean_free[nearest,j])
+                user_sim = self.user_similarity[u,nearest]
+                user_sim.resize(self.k)
+                sim.append(user_sim)
+                data = self.data_mean_free[nearest,j]
+                data.resize(self.k)
+                ratings.append(data)
             sim = np.array(sim)
             ratings = np.array(ratings)
-            return self.row_mean[coords[:,0]].T + (np.sum(sim*ratings,axis=1))/(np.sum(np.abs(sim),axis=1))
-        pass
+            num = np.sum(sim*ratings,axis=1)
+            denom = np.sum(np.abs(sim),axis=1)
+            result = np.divide(num,denom)
+            result = np.nan_to_num(result)
+            return np.add(self.row_mean[coords[:,0]].reshape(1,-1), result.reshape(1,-1))
 
 
