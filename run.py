@@ -8,11 +8,7 @@ from sklearn.decomposition import nmf as nmf
 
 #todo Konstanten auslagern
 import metrices.accuracy as accuracy
-from knn.distance_metrics import pearson, cosine
-from knn.knn import kNN
-from models.bayes import NaiveBayes
 from models.matrix_factorization import UMF, NMF
-from utility.matrices import convert_sparse_coo_to_full_matrix, make_rows_mean_free
 
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
 print(f"maximum rating: {np.amax(X_raw[:,2])}")
@@ -45,7 +41,7 @@ print("fitting with NMF")
 #recommender.fit(verbosity=1)
 
 print("fitting with classic gd")
-classificator = UMF(X_train_raw, rank=25, random_state=2, eta=0.0005, regularization=0.7, epsilon=1e-5, max_run=500, verbose=True)
+classificator = UMF(X_train_raw, rank=15, random_state=42, eta=0.0005, regularization=0, epsilon=1e-5, max_run=200, verbose=True)
 classificator.fit(verbosity=1)
 
 #pickle.dump(classificator, open("umf_test.pyc", "wb"))

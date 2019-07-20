@@ -18,6 +18,7 @@ class UMF:
                     max_run=1_000,
                     method="gd",
                     convergence_check="step",
+                    bias=False,
                     verbose=False
                 ):
         if X_train.shape[1] != 3:
@@ -62,12 +63,26 @@ class UMF:
 
         self.learn_insights = []
         self.verbose = verbose
+        self.bias = bias
+        self.global_mean = 0
 
     def fit(self, verbosity=0, validation_set=None):
         if self.verbose:
             print("Initializing U and V with random values")
-        U = np.random.rand(self.m, self.rank)
-        V = np.random.rand(self.n, self.rank)
+        if self.bias:
+            U = np.random.rand(self.m, self.rank + 2)
+            U[:, self.rank + 1] = 1
+            V = np.random.rand(self.n, self.rank + 2)
+            V[:, self.rank] = 1
+            global_sum = np.sum(self.train_full)
+            entry_count = np.sum(self.train_full != 0)
+            self.global_mean = global_sum/entry_count
+            mean_free = self.train_full - self.global_mean
+            mean_free[self.train_full == 0] = 0
+            self.train_full = mean_free
+        else:
+            U = np.random.rand(self.m, self.rank)
+            V = np.random.rand(self.n, self.rank)
 
         if self.method == "gd":
             E_old = np.zeros((self.m,self.n))
@@ -94,6 +109,9 @@ class UMF:
                 V_old = V
                 U = U - self.eta * self.regularization * U_old + self.eta * np.matmul(E, V_old)
                 V = V - self.eta * self.regularization * V_old + self.eta * np.matmul(E.T, U_old)
+                if self.bias:
+                    U[:, self.rank + 1] = 1
+                    V[:, self.rank] = 1
                 E_old = E
 
         elif self.method == "sgd":
@@ -130,7 +148,10 @@ class UMF:
     def predict(self, coords):
         if not isinstance(coords, np.ndarray) or coords.shape[1] != 2:
             raise Exception("Predict parameter is not of type np.ndarray or has wrong column count")
-        return self.matrix[coords[:,0],coords[:,1]]
+        if self.bias:
+            return self.matrix[coords[:,0],coords[:,1]] + self.global_mean
+        else:
+            return self.matrix[coords[:,0],coords[:,1]]
 
 class NMF:
     def __init__(self,          #TODO check each parameter for correct type
