@@ -9,6 +9,7 @@ class SimiliarityMatrix:
     def __init__(self,
                  data_matrix,
                  axis=0,
+                 mean="row",
                  method="pearson",
                  verbose=False):
         self.data = data_matrix
@@ -21,6 +22,9 @@ class SimiliarityMatrix:
         if method.lower() != "pearson" and method.lower() != "cosine":
             raise Exception("Uncommon method!")
         self.method = method.lower()
+        if mean.lower() != "row" and mean.lower() != "col":
+            raise Exception("Only rows or columns can made mean free.")
+        self.mean_method = mean
 
     def save(self, filename):
         with open(filename, "wb") as file:
@@ -30,16 +34,20 @@ class SimiliarityMatrix:
 
 
     def fit(self):
-        row_sum = np.sum(self.data, axis=1-self.axis)
         data_bin = np.zeros_like(self.data)
         data_bin[self.data != 0] = 1
-        entry_count = np.sum(data_bin, axis=1-self.axis)
-        mean = (row_sum / entry_count).reshape(-1,1)
-        self.mean = mean
-        if self.axis == 0:
+        if self.mean_method == "row":
+            row_sum = np.sum(self.data, axis=1)
+            entry_count = np.sum(data_bin, axis=1)
+            mean = (row_sum / entry_count).reshape(-1,1)
+            self.mean = mean
             mean_free_data = self.data - mean
         else:
-            mean_free_data = self.data.T - mean
+            row_sum = np.sum(self.data, axis=0)
+            entry_count = np.sum(data_bin, axis=0)
+            mean = (row_sum / entry_count).reshape(-1, 1)
+            self.mean = mean
+            mean_free_data = (self.data.T - mean).T
         for u in range(0,self.data.shape[self.axis]):
             if self.verbose:
                 print(f"Running {u} of {self.data.shape[self.axis]}")
@@ -49,8 +57,8 @@ class SimiliarityMatrix:
                         items_u = mean_free_data[u,:][data_bin[u,:] == data_bin[v,:]]
                         items_v = mean_free_data[v, :][data_bin[u,:] == data_bin[v,:]]
                     else:
-                        items_u = mean_free_data[u,:][data_bin[:,u] == data_bin[:,v]]
-                        items_v = mean_free_data[v,:][data_bin[:,u] == data_bin[:,v]]
+                        items_u = mean_free_data[:,u][data_bin[:,u] == data_bin[:,v]]
+                        items_v = mean_free_data[:,v][data_bin[:,u] == data_bin[:,v]]
                 else:
                     if self.axis == 0:
                         items_u = self.data[u,:][data_bin[u,:] == data_bin[v,:]]
@@ -106,5 +114,5 @@ if __name__ == "__main__":
     example_bin[example != 0] = 1
     entry_count = np.sum(example_bin, axis=1)
     mean = row_sum/entry_count
-    psm = SimiliarityMatrix(example,axis=1,)
+    psm = SimiliarityMatrix(example,axis=1)
     psm.fit()
