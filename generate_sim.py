@@ -16,23 +16,23 @@ X_train_raw[:,2] += 1
 
 data = convert_sparse_coo_to_full_matrix(X_train_raw).toarray()
 
-print("calculate pearson similarity matrix for user")
-pearson = SimiliarityMatrix(data,axis=0,verbose=True)
+print("calculate pearson similarity matrix for user; dimensional reduction")
+pearson = SimiliarityMatrix(data,axis=0,verbose=True,reduce_dimension=True)
 pearson.fit()
 pearson.save("user_pearson_sim.pyc")
 
-print("calculate cosine similarity matrix for user")
-cosine = SimiliarityMatrix(data, axis=0,method="cosine",verbose=True)
-cosine.fit()
-cosine.save("user_cosine_sim.pyc")
+#print("calculate cosine similarity matrix for user")
+#cosine = SimiliarityMatrix(data, axis=0,method="cosine",verbose=True)
+#cosine.fit()
+#cosine.save("user_cosine_sim.pyc")
 
 
-print("calculate pearson similarity matrix for item")
-pearson = SimiliarityMatrix(data,axis=1,verbose=True)
+print("calculate pearson similarity matrix for item; dimensional reduction")
+pearson = SimiliarityMatrix(data,axis=1,verbose=True,reduce_dimension=True)
 pearson.fit()
 pearson.save("item_pearson_sim.pyc")
 
-print("calculate cosine similarity matrix for user")
-cosine = SimiliarityMatrix(data, axis=1,method="cosine",verbose=True)
-cosine.fit()
-cosine.save("item_cosine_sim.pyc")
+#print("calculate cosine similarity matrix for user")
+#cosine = SimiliarityMatrix(data, axis=1,method="cosine",verbose=True)
+#cosine.fit()
+#cosine.save("item_cosine_sim.pyc")
