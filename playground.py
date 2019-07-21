@@ -37,10 +37,11 @@ X_train_raw[:,2] += 1
 
 data = convert_sparse_coo_to_full_matrix(X_train_raw).toarray()
 
-useful = kNN(data, user, item, mean, k=77)
+useful = kNN(data, user, item, mean, k=29)
 #useful.classify(np.array([[2121,375]]),axis=0)
 y_hat = useful.classify(X_remaining_raw[:,(0,1)],axis=0)
 rmse_knn = accuracy.rmse(X_remaining_raw[:,2], y_hat-1)
+mae_knn = accuracy.mae(X_remaining_raw[:,2], y_hat-1)
 y_hat2 = useful.classify(X_remaining_raw[:,(0,1)],axis=1)
 rmse_knn2 = accuracy.rmse(X_remaining_raw[:,2], y_hat2-1)
 y_hat3 = useful.classify(X_remaining_raw[:,(0,1)])

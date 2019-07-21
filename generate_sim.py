@@ -13,11 +13,12 @@ X_validate_raw, X_test_raw = ms.train_test_split(X_remaining_raw, test_size=0.1,
 
 print("data preprocessing")
 X_train_raw[:,2] += 1
-
+print("removing items that are never rated")
 data = convert_sparse_coo_to_full_matrix(X_train_raw).toarray()
 
+
 print("calculate pearson similarity matrix for user; dimensional reduction")
-pearson = SimiliarityMatrix(data,axis=0,verbose=True,reduce_dimension=True)
+pearson = SimiliarityMatrix(data,axis=0,verbose=True)
 pearson.fit()
 pearson.save("user_pearson_sim.pyc")
 

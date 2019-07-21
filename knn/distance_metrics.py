@@ -57,23 +57,33 @@ class SimiliarityMatrix:
         self.data_original = self.data
 
         print("Filling missing entries")
-        for row in self.data.shape[0]:
+        for row in range(self.data.shape[0]):
             self.data[row,(self.data_original[row,:] == 0)] = self.mean[row]
 
         #compute similarity matrix between item pairs
         print("Performing SVD")
-        S = np.matmul(self.data.T, self.data)
+        if self.axis == 0:
+            S = np.matmul(self.data.T, self.data)
+        else:
+            S = np.matmul(self.data, self.data.T)
         p, delta, pt = np.linalg.svd(S)
-        self.data = np.matmul(self.data, p[:,:self.dimension])
+        sorted_ind = np.argsort(delta)
+        if self.axis == 0:
+            self.data = np.matmul(self.data, p[:,sorted_ind[-self.dimension:]])
+        else:
+            self.data = np.matmul(self.data.T, p[:,:self.dimension])
 
 
     def __calculate_similarities(self):
         data_bin = np.zeros_like(self.data)
         data_bin[self.data != 0] = 1
-        if self.mean_method == "row":
-            mean_free_data = self.data - self.mean
+        if not self.reduce_dimension:
+            if self.mean_method == "row":
+                mean_free_data = self.data - self.mean
+            else:
+                mean_free_data = (self.data.T - self.mean).T
         else:
-            mean_free_data = (self.data.T - self.mean).T
+            mean_free_data = self.data
         for u in range(0, self.data.shape[self.axis]):
             if self.verbose:
                 print(f"Running {u} of {self.data.shape[self.axis]}")
@@ -107,8 +117,6 @@ class SimiliarityMatrix:
         if self.reduce_dimension:
             if self.verbose:
                 print("Reducing dimension...")
-            if self.axis == 1:
-                self.data = self.data.T
             self.__reduce_dimension()
             self.method = "cosine"
         print("Calculating similarities...")
