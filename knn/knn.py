@@ -48,7 +48,6 @@ class kNN:
             ratings = []
             for (u,j) in coords[:,(0,1)]:
                 nearest = np.argpartition(self.user_similarity[u,(self.data_bin[:,j]==1)], -(self.k))[-(self.k):]
-                nearest = nearest[nearest != u]
                 user_sim = self.user_similarity[u,self.data_bin[:,j]==1][nearest]
                 user_sim.resize(self.k)
                 sim.append(user_sim)
@@ -67,12 +66,11 @@ class kNN:
             for (u, j) in coords[:, (0, 1)]:
                 try:
                     nearest = np.argpartition(self.item_similarity[j, (self.data_bin[u,:] == 1)], -self.k)[-self.k:]
-                    nearest = nearest[nearest != j]
                     item_sim = self.item_similarity[j, self.data_bin[u,:] == 1][nearest]
-                    data = self.data_mean_free[u, self.data_bin[u,:] == 1][nearest]
+                    data = self.data[u, self.data_bin[u,:] == 1][nearest]
                 except:
                     item_sim = self.item_similarity[j, self.data_bin[u,:] == 1]
-                    data = self.data_mean_free[u, self.data_bin[u,:] == 1]
+                    data = self.data[u, self.data_bin[u,:] == 1]
                 item_sim.resize(self.k)
                 data.resize(self.k)
                 sim.append(item_sim)
