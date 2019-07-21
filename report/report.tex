@@ -19,12 +19,20 @@
 
 \maketitle
 \begin{abstract}
-Here goes the abstract
+As part of the course 
 \end{abstract}
 
 \section{Introduction}
-\section{Task}
+To pass the course "Statistical Learning Theory Lab" we were required to write a recommender system as final project. Roughly speaking we predict the rating that some user $u$ might give to a item $i$ depending on his previous ratings (or of other item ratings). 
+With a more technical point of view we can see this as task to complete a highly sparse matrix. There are many approaches to do this \begin{LARGE}CITE SOME\end{LARGE}. 
+
 \subsection{Dataset Insights}
+We got a set of 461806 triples of the form $(\text{row},\text{column},\text{rating})$ and we were required to rate another 81495 row/column pairs. 
+The given training data stretched out to matrix of the dimension $5499\times 2080$. Since this matrix has 11437920 entries we have around $95.9\%$ sparsity.
+
+The ratings are in the set $\{0,1,2,3,4\}$. To distinguish empty entries from the rating 0 it is useful to apply a feature map $\phi:\mathbb{N}\rightarrow\mathbb{N},m\rightarrow m+1$ before any other computation. As final step we need then apply its inverse $\phi^{-1}$ to get the correct ratings.  
+
+%TODO item/user ratings? -> graphics
 
 \section{Matrix Factorization}
 One way to solve such task uses matrix factorization. The idea is the following: given an ratings matrix $R\in\mathbb{R}^{m\times n}$. We assume that $\rank(R)\ll\min(m,n)$. Then this matrix can be decomposed in two smaller matrices such that 
@@ -63,7 +71,7 @@ First with respect to the matrix U
 \begin{split}
 \nabla_{U_{i,\beta}} \frac{1}{2}\norm{E}^2 &= \nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}E_{i,j}^2 \\ &=\nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2 \\
 &=\nabla_{U_{\alpha,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-\sum_{l=1}^k U_{i,l}V^T_{l,j})^2\\
-&=\sum_{i,j}(R_{i,j}-\sum_{l}^k U_{i,l}V^T_{l,j})(-V^T_{\beta,j})\\
+&=\sum_{i,j}(R_{i,j}-\sum_{l=1}^k U_{i,l}V^T_{l,j})(-V^T_{\beta,j})\\
 &=\sum_{i,j}(E_{i,j})(-V_{j,\beta})=-EV_{i,\beta} 
 \end{split}
 \end{equation*}
