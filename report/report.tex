@@ -1,5 +1,5 @@
 %\documentclass[twocolumn]{scrartcl}
-\documentclass[DIV=12]{scrartcl}
+\documentclass[DIV=14,twocolumn]{scrartcl}
 \usepackage[pdftex]{hyperref}
 \usepackage{cite}
 \usepackage{amsmath}
@@ -39,7 +39,7 @@ In the easiest variant of such optimization problem we assume that there are no 
 \subsection{Gradient Descent}
 The gradient method is an iterative approach to find an $x$ that minimizes a differentiable function $f$ starting with an given $x_0$. For this we calculated the gradient of the function. This points in the direction of the highest ascent of this function. To minimize the function we go small steps in the opposite direction. This can done with an iterative approach as described in \ref{algo:gd}. 
 
-\begin{algorithm}[H]
+\begin{algorithm}
 	\caption{gradient descent}
 	\label{algo:gd}
 	\KwData{starting point $x^0$, learning rate $\eta > 0$}
@@ -59,12 +59,21 @@ We want to apply the gradient descent approach on the unconstrained matrix facto
 Now let us define $E:=R-UV^T$ as the error matrix. Again all unobserved entries in this matrix are zero and don't affect the loss function. Our objective function becomes now $\min\frac{1}{2}\norm{E}^2$.
 We can now calculate the gradient.
 First with respect to the matrix U
-\[\nabla_{U_{i,\beta}} \frac{1}{2}\norm{E}^2 = \nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}E_{i,j}^2=\nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2=
-\nabla_{U_{\alpha,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-\sum_{l=1}^k U_{i,l}V^T_{l,j})^2\]
-\[=\sum_{i,j}(R_{i,j}-\sum_{l}^k U_{i,l}V^T_{l,j})(-V^T_{\beta,j})=\sum_{i,j}(E_{i,j})(-V_{j,\beta})=-EV_{i,\beta} \]
+\begin{equation*}
+\begin{split}
+\nabla_{U_{i,\beta}} \frac{1}{2}\norm{E}^2 &= \nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}E_{i,j}^2 \\ &=\nabla_{U_{i,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2 \\
+&=\nabla_{U_{\alpha,\beta}} \frac{1}{2}\sum_{i,j}(R_{i,j}-\sum_{l=1}^k U_{i,l}V^T_{l,j})^2\\
+&=\sum_{i,j}(R_{i,j}-\sum_{l}^k U_{i,l}V^T_{l,j})(-V^T_{\beta,j})\\
+&=\sum_{i,j}(E_{i,j})(-V_{j,\beta})=-EV_{i,\beta} 
+\end{split}
+\end{equation*}
 Symmetrical we can derive the objective function with respect to V and get 
-\[\nabla_{V_{j,\alpha}} \frac{1}{2}\norm{E}^2 = \nabla_{V_{j,\alpha}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2
-=\sum_{i,j}(E_{i,j})(-U_{i,\alpha})=-E^TU_{j,\alpha} \]
+\begin{equation*}
+\begin{split}
+\nabla_{V_{j,\alpha}} \frac{1}{2}\norm{E}^2 &= \nabla_{V_{j,\alpha}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2\\
+&=\sum_{i,j}(E_{i,j})(-U_{i,\alpha})=-E^TU_{j,\alpha}
+\end{split}
+\end{equation*}
 
 As you can see those gradients can be easily vectorized and so we get $\nabla_U \frac{1}{2}\norm{E}^2=-EV$ and  $\nabla_V \frac{1}{2}\norm{E}^2=-E^TU$. Since the learning rate $\eta$ needs to be positive we get the following update rules: $U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)}$ and $V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)}$. With this update rules we can now use \ref{algo:gd} to minimize our objective function. Now we have only to decide us for a convergence criteria. One possibility is that the value of our objective function should be below a certain value. But since the gradient descent finds only a local, previous unknown, minimum it is hard to decide when to stop. It is therefore better to use other criteria. In my implementation I stop when the difference of the objective function value between two iterations is below a certain limit. Formally the algorithm stops when $|\frac{1}{2}\norm{E^{(n)}}^2-\frac{1}{2}\norm{E^{(n+1)}}^2|=\frac{1}{2}|\sum_{i,j}(E_{i,j}^{(n)})^2-(E_{i,j}^{(n+1)})^2|\leq\epsilon$ holds.
 
@@ -72,6 +81,22 @@ As you can see those gradients can be easily vectorized and so we get $\nabla_U 
 In order to prevent overfitting it is common to add a regularization term to the objective function. As stated in \cite{Gi19} this may increase the bias but it also may decrease the variance of the estimator. This is known as Bias-Variance trade-of an can lead to a better predictor. For our matrix factorization problem we can  add the regularization terms $\frac{\lambda}{2}\norm{U}^2$ and $\frac{\lambda}{2}\norm{V}^2$ for $\lambda \geq 0$ as recommended in \cite{Ag16}.
 Plugging this into our objective function we get $\min_{U,V} \frac{1}{2}\norm{E}^2 + \frac{\lambda}{2}\norm{U}^2 + \frac{\lambda}{2}\norm{V}^2$. Calculating the gradient of this function gives us the following update rules: $U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)} - \eta\lambda U^{(i)}$ and $V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)} - \eta\lambda V^{(i)}$.
 
+\subsection{Incorporating Bias}
+Users and items are different. Some users may rated many items and others only a few. And some items are bought more often then others and therefor they may have more ratings. 
+As first step we can mean center our original matrix with the global mean $\mu$, calculate our ratings and add the mean again. But this can be done better.
+
+As described in \cite{Ag16} we can associate with each user $i$ a variable $o_i$ which indicates the bias user $i$ to rate items. Users who rate items high or more often might have a high value, users who rate very rarely items may have small (negative) values. Vice versa we can introduce a similar variable $p_j$ for items.
+ 
+Our predicted rating for items become now $\hat{R}_{u,i} = \mu + o_u + p_i + UV^T_{u,i}$. Our error matrix becomes now $E_{u,i} = R_{u,i}^{'} - \hat{R}_{u,i} = R_{u,i}^{'} - o_u - p_i - UV^T_{u,i}$. Note that $R^{'}$ denotes here the mean centered data matrix and so $\mu$ plays no role in the following calculations.
+
+Now let us look on the following equation:
+\begin{equation*}
+\begin{split}
+o_u + p_i + UV^T_{u,i} &= \sum_{l}^{k}U_{u,l}V^T_{l,i} + o_u + p_i\\ &= \sum_{l}^{k}U_{u,l}V^T_{l,i} + o_u\cdot 1 + 1\cdot p_i
+\end{split}
+\end{equation*}
+It is easy to see that the last two terms can added to the sum if we increase $k$ by $2$ and set $U_{u,k+1}=o_u$ and $V^T_{k+1,i}=1$ as well $V^T_{k+2,i}=p_i$ and $U_{u,k+2}=1$. Our new problem is now pretty similar to our original problem. We have only two small new constraints. The column $k+2$ in $U$ and the column $k+1$ in $V$ must be $1$.
+This constraints can be satisfied in the gradient descent approach if we set this columns after each update step to $1$ as described in \cite{Ag16}.
 \section{Implementation Details}
 
 \subsection{Data Preprocessing}
@@ -81,6 +106,7 @@ For an easier implementation I decided to map the ratings from $\{0,1,2,3,4\}$ t
 
 \section{Model Evaluation And Parameter Tuning}
 
+\section{Conclusion}
 \bibliography{references}{}
 \bibliographystyle{alpha}
 \end{document}
