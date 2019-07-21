@@ -45,22 +45,36 @@ X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np
 X_train_raw, X_remaining_raw = ms.train_test_split(X_raw, test_size=0.1, random_state=42)
 X_validate_raw, X_test_raw = ms.train_test_split(X_remaining_raw, test_size=0.1, random_state=42)
 
-ranks = [1, 5, 10, 15, 20, 25, 30]
+ranks = [1, 5, 10, 15, 20, 25]
 rmses = []
 for rank in ranks:
-    filename = "umf_rank_" + str(rank) + ".pyc"
+    filename = "umf_rank_" + str(rank) + "_no_bias.pyc"
     model = pickle.load(open(os.path.join("trained_models", filename), "rb"))
+    filename = "umf_rank_" + str(rank) + "_bias.pyc"
+    model_bias = pickle.load(open(os.path.join("trained_models", filename), "rb"))
     rmse_train = accuracy.rmse(X_train_raw[:,2]-1,model.predict(X_train_raw[:,(0,1)])-1)
     rmse_validate = accuracy.rmse(X_validate_raw[:, 2], model.predict(X_validate_raw[:, (0, 1)]) - 1)
     absolute_error = model.learn_insights[-1][1]
-    rmses.append((rank, rmse_train, rmse_validate, absolute_error))
+    rmse_train_bias = accuracy.rmse(X_train_raw[:, 2] - 1, model_bias.predict(X_train_raw[:, (0, 1)]) - 1)
+    rmse_validate_bias = accuracy.rmse(X_validate_raw[:, 2], model_bias.predict(X_validate_raw[:, (0, 1)]) - 1)
+    absolute_error_bias = model_bias.learn_insights[-1][1]
+    rmses.append((rank, rmse_train, rmse_validate, absolute_error, rmse_train_bias, rmse_validate_bias, absolute_error_bias))
 plt.figure()
 rmses = np.array(rmses)
 plt.plot(rmses[:,0],rmses[:,2], color="blue", marker="o")
+plt.plot(rmses[:,0],rmses[:,5], color="green", marker="o")
 plt.title("RMSE on validation set vs. matrix rank")
 plt.ylabel("RMSE")
 plt.xlabel("rank")
-plt.savefig(os.path.join("img","rank_rmse.png"))
+plt.savefig(os.path.join("img","rank_rmse_validate.png"))
+plt.figure()
+plt.plot(rmses[:,0],rmses[:,1], color="blue", marker="o")
+plt.plot(rmses[:,0],rmses[:,4], color="green", marker="o")
+plt.title("RMSE on training set vs. matrix rank")
+plt.ylabel("RMSE")
+plt.xlabel("rank")
+plt.savefig(os.path.join("img","rank_rmse_train.png"))
 plt.figure()
 plt.plot(rmses[:,0],rmses[:,3], color="blue", marker="o")
+plt.plot(rmses[:,0],rmses[:,6], color="green", marker="o")
 plt.savefig(os.path.join("img","rank_abs_error.png"))

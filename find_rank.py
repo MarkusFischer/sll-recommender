@@ -20,7 +20,7 @@ ranks = [1, 5, 10, 15, 20, 25, 30, 35]
 
 for rank in ranks:
     print(f"Building estimator with rank {rank}")
-    factorizer = UMF(X_train_raw, rank=rank, eta=0.0005, regularization=0, epsilon=1e-3, max_run=7500, verbose=True,
+    factorizer = UMF(X_train_raw, rank=rank, eta=0.0005, regularization=0, epsilon=1e-3, max_run=5000, verbose=True,
                      bias=False)
     factorizer.fit()
 
@@ -31,7 +31,7 @@ for rank in ranks:
     pickle.dump(factorizer, open(os.path.join("trained_models",filename), "wb"))
 
     print(f"Building estimator with rank wrt. bias {rank}")
-    factorizer_bias = UMF(X_train_raw, rank=rank, eta=0.0005, regularization=0, epsilon=1e-3, max_run=7500, verbose=True,
+    factorizer_bias = UMF(X_train_raw, rank=rank, eta=0.0005, regularization=0, epsilon=1e-3, max_run=5000, verbose=True,
                      bias=True)
     factorizer_bias.fit()
 
@@ -39,4 +39,4 @@ for rank in ranks:
     print(f"RMSE for rank {rank}: {rmse}")
 
     filename = "umf_rank_" + str(rank) + "_bias.pyc"
-    pickle.dump(factorizer, open(os.path.join("trained_models", filename), "wb"))
+    pickle.dump(factorizer_bias, open(os.path.join("trained_models", filename), "wb"))
