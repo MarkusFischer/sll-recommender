@@ -157,11 +157,10 @@ class NMF:
     def __init__(self,          #TODO check each parameter for correct type
                     X_train,
                     rank=10,
-                    random_state=random.randint(1, 101),
-                    regularization=None,
                     epsilon=1,
                     stability = 10**(-9),
                     max_run=1_000,
+                    verbose=False
                 ):
         if X_train.shape[1] != 3:
             raise Exception("wrong shape")
@@ -170,31 +169,28 @@ class NMF:
         self.m = self.train_full.shape[0]
         self.n = self.train_full.shape[1]
         self.rank = rank
-        self.random_state=random_state
         self.epsilon = epsilon
         self.stability = stability
         self.max_run = max_run
-        self.regularization = regularization
-        np.random.seed(self.random_state)
         self.matrix = None
+        self.verbose = verbose
 
     def fit(self, verbosity=0, validation_set = None):
         if verbosity == 2 and validation_set is None:
             raise Exception("For usage of verbosity level 2 an validation set is required")
-        if verbosity >= 1:
+        if self.verbose:
             print("initialize U and V with random values")
         U = np.random.rand(self.m, self.rank)
         V = np.random.rand(self.n, self.rank)
-        U_min = U
-        V_min = V
-        min_error = float("inf")
-        for i in range(0, self.max_run):
+        E_old = np.matmul(U, V.T)
+        for i in range(0, self.max_run+1):
             R_predicted = np.matmul(U, V.T)
             E = self.train_full - R_predicted
             error = 0.5* np.sum(E*E)
-            if verbosity >= 1:
-                print(f"Cycle {i} of {self.max_run}; error: {error}")
-            if error <= self.epsilon:
+            last_step = 0.5 * np.abs(np.sum(E * E) - np.sum(E_old ** 2))
+            if self.verbose and i % 10 == 0:
+                print(f"Cycle {i} of {self.max_run}; error: {error}, step_size: {last_step}")
+            if last_step <= self.epsilon:
                 break
             U_old = U
             V_old = V
@@ -205,6 +201,9 @@ class NMF:
             V_delta_numerator = V_old * np.matmul(self.train_full.T, U)
             V_delta_denomerator = np.matmul(V_old, np.matmul(U.T, U)) + self.stability
             V = V_delta_numerator/V_delta_denomerator
+            E_old = E
+        self.U = U
+        self.V = V
         self.matrix = np.matmul(U,V.T)
 
     def predict(self, coords):
