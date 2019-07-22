@@ -81,7 +81,7 @@ plt.savefig(os.path.join("img","rank_abs_error.png"))
 
 
 rmses_lambda = []
-lambdas =[0.2, 0.4, 0.6, 0.8, 1, 1.5, 2]
+lambdas =[0.2, 0.4, 0.6, 0.8, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4]
 model_bias = pickle.load(open(os.path.join("trained_models", "umf_rank_20_bias.pyc"), "rb"))
 rmse_train_bias = accuracy.rmse(X_train_raw[:, 2] - 1, model_bias.predict(X_train_raw[:, (0, 1)]) - 1)
 rmse_validate_bias = accuracy.rmse(X_validate_raw[:, 2], model_bias.predict(X_validate_raw[:, (0, 1)]) - 1)

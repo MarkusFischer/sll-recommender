@@ -41,17 +41,17 @@ print("fitting with NMF")
 #recommender.fit(verbosity=1)
 
 print("fitting with classic gd")
-classificator = UMF(X_train_raw, rank=15, random_state=42, eta=0.0005, regularization=0, epsilon=1e-5, max_run=200, verbose=True)
-classificator.fit(verbosity=1)
+#classificator = UMF(X_train_raw, rank=15, random_state=42, eta=0.0005, regularization=0, epsilon=1e-5, max_run=200, verbose=True)
+#classificator.fit(verbosity=1)
 
 #pickle.dump(classificator, open("umf_test.pyc", "wb"))
 
 
 
-rmse_gd = accuracy.rmse(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
-mae_gd = accuracy.mae(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
-print(f"RMSE gd: {rmse_gd}")
-print(f"MAE gd: {mae_gd}")
+#rmse_gd = accuracy.rmse(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
+#mae_gd = accuracy.mae(X_test_raw[:,2], classificator.predict(X_test_raw[:,(0,1)])-1)
+#print(f"RMSE gd: {rmse_gd}")
+#print(f"MAE gd: {mae_gd}")
 
 #rmse_sgd = accuracy.rmse(X_test_raw[:,2], recommender.predict(X_test_raw[:,(0,1)])-1)
 #rmse_sgd = accuracy.rmse(X_test_raw[:,2], classificator_sgd.predict(X_test_raw[:,(0,1)])-1)
@@ -78,6 +78,8 @@ print(f"MAE gd: {mae_gd}")
 #print(mae_bayes)
 
 
+
+classificator = pickle.load(open("trained_models/umf_lambda_4.pyc", "rb"))
 print("saving to file")
 Xq = np.genfromtxt(os.path.join("data", "qualifying_blanc.csv"), delimiter=",", dtype=np.int)
 bayes = classificator.predict(Xq)-1
