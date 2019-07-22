@@ -16,7 +16,8 @@ X_validate_raw, X_test_raw = ms.train_test_split(X_remaining_raw, test_size=0.1,
 print("data preprocessing")
 X_train_raw[:,2] += 1
 
-lambdas = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 2]
+#lambdas = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 2]
+lambdas = [1.25, 1.75, 2.5, 3, 3.5, 4]
 
 for lambd in lambdas:
     print(f"Building estimator with lambda {lambd}")
