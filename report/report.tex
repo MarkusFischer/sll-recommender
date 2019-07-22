@@ -105,11 +105,6 @@ o_u + p_i + UV^T_{u,i} &= \sum_{l}^{k}U_{u,l}V^T_{l,i} + o_u + p_i\\ &= \sum_{l}
 \end{equation*}
 It is easy to see that the last two terms can added to the sum if we increase $k$ by $2$ and set $U_{u,k+1}=o_u$ and $V^T_{k+1,i}=1$ as well $V^T_{k+2,i}=p_i$ and $U_{u,k+2}=1$. Our new problem is now pretty similar to our original problem. We have only two small new constraints. The column $k+2$ in $U$ and the column $k+1$ in $V$ must be $1$.
 This constraints can be satisfied in the gradient descent approach if we set this columns after each update step to $1$ as described in \cite{Ag16}.
-\section{Implementation Details}
-
-\subsection{Data Preprocessing}
-For an easier implementation I decided to map the ratings from $\{0,1,2,3,4\}$ to $\{1,2,3,4,5\}$ using the feature map $\phi:\mathbf{R}\rightarrow\mathbf{R};x\rightarrow x + 1$. With this preprocessing missing ratings can be distinguished from the rating 0.
-
 
 
 \section{Model Evaluation And Parameter Tuning}

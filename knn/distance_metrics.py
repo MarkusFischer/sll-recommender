@@ -2,8 +2,6 @@ import pickle
 
 import numpy as np
 
-from utility.matrices import make_rows_mean_free
-
 
 class SimiliarityMatrix:
     def __init__(self,
@@ -67,11 +65,10 @@ class SimiliarityMatrix:
         else:
             S = np.matmul(self.data, self.data.T)
         p, delta, pt = np.linalg.svd(S)
-        sorted_ind = np.argsort(delta)
         if self.axis == 0:
-            self.data = np.matmul(self.data, p[:,sorted_ind[-self.dimension:]])
+            self.data = np.matmul(self.data, p[:,:self.dimension])
         else:
-            self.data = np.matmul(self.data.T, p[:,:self.dimension])
+            self.data = np.matmul(self.data.T, p[:,:self.dimension].T)
 
 
     def __calculate_similarities(self):
