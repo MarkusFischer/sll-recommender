@@ -120,10 +120,7 @@ class UMF:
                 last_step = np.abs(self.__loss_function(np.row_stack((U, V)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization) -
                                    self.__loss_function(np.row_stack((U_old, V_old)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization))
 
-                self.learn_insights.append((cycle, loss, last_step))
-
-                #if self.verbose and cycle % 10 == 0:
-                if self.verbose:
+                if self.verbose and cycle % 10 == 0:
                     print(f"{cycle} cycles (of {self.max_run}) error (frobenius): {loss} last step size: {last_step}")
 
                 if ((last_step <= self.epsilon and self.convergence_check == "step") or (
@@ -138,19 +135,21 @@ class UMF:
 
                 if self.eta == -1:
                     #line_search
-                    gradient = self.__gradient_loss_function(np.copy(UV).reshape(-1,1).ravel(), self.m,
+                    gradient = self.__gradient_loss_function(UV.reshape(-1,1).ravel(), self.m,
                                                              self.rank, self.train_full, self.regularization)
                     UV = np.row_stack((U, V))
                     eta = scipy.optimize.line_search(self.__loss_function, self.__gradient_loss_function,
                                                      np.row_stack((U, V)).reshape(-1,1).ravel(), -gradient, c2=0.5,
                                                      args=(self.m, self.rank, self.train_full, self.regularization))[0]
                     if eta == None:
+                        print("Something went wrong during adaptive gradient descent!")
                         break
                 else:
                     eta = self.eta
 
+                self.learn_insights.append((cycle, loss, last_step, eta))
 
-                UV = UV - eta * self.__gradient_loss_function(np.copy(UV).reshape(-1,1).ravel(), self.m, self.rank, self.train_full,
+                UV = UV - eta * self.__gradient_loss_function(UV.reshape(-1,1).ravel(), self.m, self.rank, self.train_full,
                                                                 self.regularization).reshape(-1, self.rank)
                 U = UV[:self.m,:]
                 V = UV[self.m:,:]
