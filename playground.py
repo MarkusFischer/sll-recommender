@@ -20,7 +20,7 @@ print("data preprocessing")
 X_train_raw[:,2] += 1
 
 
-factorizer = UMF(X_train_raw, rank=15, eta=0.0005, regularization=0, epsilon=1e-3, max_run=500, verbose=True,
+factorizer = UMF(X_train_raw, rank=15, eta="lsearch", regularization=0, epsilon=1e-3, max_run=500, verbose=True,
                      bias=True)
 factorizer.fit()
 

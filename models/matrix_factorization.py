@@ -2,6 +2,7 @@ import numbers
 import random
 
 import numpy as np
+import scipy
 
 from metrices.accuracy import rmse, mae
 from utility.matrices import convert_sparse_coo_to_full_matrix
@@ -37,7 +38,10 @@ class UMF:
 
         if not isinstance(eta, numbers.Number) and eta.lower() != "lsearch":
             raise Exception("Eta must be an numeric value or \"lsearch\" for searching with line_search for perfect eta!")
-        self.eta = eta
+        if isinstance(eta, numbers.Number):
+            self.eta = eta
+        else:
+            self.eta = -1
 
         if not isinstance(epsilon, numbers.Number):
             raise Exception("Epsilon must be an numeric value!")
@@ -66,32 +70,33 @@ class UMF:
         self.bias = bias
         self.global_mean = 0
 
-    def __loss_function(self, uvt, user_count, ratings, lambd):
-        U = uvt[:user_count, :]
-        V = uvt[user_count:, :]
+    def __loss_function(self, uv, user_count, k, ratings, lambd):
+        U = uv[:user_count*k].reshape(-1, k)
+        V = uv[user_count*k:].reshape(-1, k)
         predicted = np.matmul(U, V.T)
         E = ratings - predicted
         E[np.nonzero(ratings == 0)] = 0
         return 0.5 * np.sum(E * E) + 0.5*lambd * np.sum(U*U) + 0.5*lambd * np.sum(V*V)
 
-    def __gradient_loss_function(self, uvt, user_count, ratings, lambd):
-        U = uvt[:user_count, :]
-        V = uvt[user_count:, :]
+    def __gradient_loss_function(self, uv, user_count, k, ratings, lambd):
+        U = uv[:user_count * k].reshape(-1, k)
+        V = uv[user_count * k:].reshape(-1, k)
         predicted = np.matmul(U, V.T)
         E = ratings - predicted
         E[np.nonzero(ratings == 0)] = 0
         gradU = lambd * U - np.matmul(E, V)
         gradV = lambd * V - np.matmul(E.T, U)
-        return np.row_stack((gradU, gradV))
+        return np.row_stack((gradU, gradV)).reshape(-1, 1).ravel()
 
     def fit(self, verbosity=0):
         if self.verbose:
             print("Initializing U and V with random values")
         if self.bias:
-            U = np.random.rand(self.m, self.rank + 2)
-            U[:, self.rank + 1] = 1
-            V = np.random.rand(self.n, self.rank + 2)
-            V[:, self.rank] = 1
+            self.rank = self.rank + 2
+            U = np.random.rand(self.m, self.rank)
+            U[:, self.rank - 1] = 1
+            V = np.random.rand(self.n, self.rank)
+            V[:, self.rank - 2] = 1
             global_sum = np.sum(self.train_full)
             entry_count = np.sum(self.train_full != 0)
             self.global_mean = global_sum/entry_count
@@ -111,13 +116,14 @@ class UMF:
                 E = (self.train_full - R_predicted)
                 E[np.nonzero(self.train_full == 0)] = 0
 
-                loss = self.__loss_function(np.row_stack((U, V)), self.m, self.train_full, self.regularization)
-                last_step = np.abs(self.__loss_function(np.row_stack((U, V)), self.m, self.train_full, self.regularization) -
-                                   self.__loss_function(np.row_stack((U_old, V_old)), self.m, self.train_full, self.regularization))
+                loss = self.__loss_function(np.row_stack((U, V)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization)
+                last_step = np.abs(self.__loss_function(np.row_stack((U, V)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization) -
+                                   self.__loss_function(np.row_stack((U_old, V_old)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization))
 
                 self.learn_insights.append((cycle, loss, last_step))
 
-                if self.verbose and cycle % 10 == 0:
+                #if self.verbose and cycle % 10 == 0:
+                if self.verbose:
                     print(f"{cycle} cycles (of {self.max_run}) error (frobenius): {loss} last step size: {last_step}")
 
                 if ((last_step <= self.epsilon and self.convergence_check == "step") or (
@@ -129,14 +135,28 @@ class UMF:
                 U_old = U
                 V_old = V
                 UV = np.row_stack((U,V))
-                UV = UV - self.eta*self.__gradient_loss_function(np.copy(UV), self.m, self.train_full, self.regularization)
+
+                if self.eta == -1:
+                    #line_search
+                    gradient = self.__gradient_loss_function(np.copy(UV).reshape(-1,1).ravel(), self.m,
+                                                             self.rank, self.train_full, self.regularization)
+                    UV = np.row_stack((U, V))
+                    eta = scipy.optimize.line_search(self.__loss_function, self.__gradient_loss_function,
+                                                     np.row_stack((U, V)).reshape(-1,1).ravel(), -gradient, c2=0.5,
+                                                     args=(self.m, self.rank, self.train_full, self.regularization))[0]
+                    if eta == None:
+                        break
+                else:
+                    eta = self.eta
+
+
+                UV = UV - eta * self.__gradient_loss_function(np.copy(UV).reshape(-1,1).ravel(), self.m, self.rank, self.train_full,
+                                                                self.regularization).reshape(-1, self.rank)
                 U = UV[:self.m,:]
                 V = UV[self.m:,:]
-                #U = U - self.eta * self.regularization * U_old + self.eta * np.matmul(E, V_old)
-                #V = V - self.eta * self.regularization * V_old + self.eta * np.matmul(E.T, U_old)
                 if self.bias:
-                    U[:, self.rank + 1] = 1
-                    V[:, self.rank] = 1
+                    U[:, self.rank - 1] = 1
+                    V[:, self.rank - 2] = 1
                 E_old = E
 
         elif self.method == "sgd":
