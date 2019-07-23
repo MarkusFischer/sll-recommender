@@ -22,9 +22,9 @@
 As part of the course 
 \end{abstract}
 
-\section{Introduction}
-To pass the course "Statistical Learning Theory Lab" we were required to write a recommender system as final project. Roughly speaking we predict the rating that some user $u$ might give to a item $i$ depending on his previous ratings (or of other item ratings). 
-With a more technical point of view we can see this as task to complete a highly sparse matrix. There are many approaches to do this \begin{LARGE}CITE SOME\end{LARGE}. 
+\section{Task and Dataset}
+To pass the course "Statistical Learning Theory Lab" we were required to write a recommender system as final project. Roughly speaking we predict the rating $\hat{r}_{u,i}$ that some user $u$ might give to a item $i$ depending on his previous ratings (or of other item ratings). 
+With a more technical point of view we can see this as task to complete a highly sparse matrix. There are many approaches to do this. The two most common variants were described in \cite{KoBeVo09}. One approach determines the rating according to the "neighbours" of the item or user. Others try to compute a decomposition of the ratings matrix $R$. 
 
 \subsection{Dataset Insights}
 We got a set of 461806 triples of the form $(\text{row},\text{column},\text{rating})$ and we were required to rate another 81495 row/column pairs. 
@@ -32,20 +32,30 @@ The given training data stretched out to matrix of the dimension $5499\times 208
 
 The ratings are in the set $\{0,1,2,3,4\}$. To distinguish empty entries from the rating 0 it is useful to apply a feature map $\phi:\mathbb{N}\rightarrow\mathbb{N},m\rightarrow m+1$ before any other computation. As final step we need then apply its inverse $\phi^{-1}$ to get the correct ratings.  
 
-%TODO item/user ratings? -> graphics
+\subsection{Measuring the Performance}
+One metric to measure the performance of a predictor is the root mean square error RMSE. Let $r_{u,i}$ the observed rating, $\hat{r}_{u,i}$ the predicted rating and let $n$ be the number of predictions. Then the RMSE is defined in the following way: 
+\begin{equation*}
+\begin{split}
+RMSE = \sqrt{\frac{\sum (r_{u,i}-\hat{r}_{u,i})^2}{n}}
+\end{split}
+\end{equation*}
+The RMSE penalize low errors less than large ones. 
+
+\subsection{Baseline Predictors}
+To get a feeling for the dataset it is useful to implement very basic baseline predictors. One example could be to use the mean to predict the rating $\hat{r}_{u,i}$ for user u and item i. Using the user mean to predict new ratings give us an RMSE of $1.221$ and using the item mean give us an error of $1.267$.
 
 \section{Matrix Factorization}
-One way to solve such task uses matrix factorization. The idea is the following: given an ratings matrix $R\in\mathbb{R}^{m\times n}$. We assume that $\rank(R)\ll\min(m,n)$. Then this matrix can be decomposed in two smaller matrices such that 
+A better way to solve such task uses matrix factorization. The idea is the following: given is a ratings matrix $R\in\mathbb{R}^{m\times n}$. We assume that $\rank(R)\ll\min(m,n)$. Then this matrix can be decomposed in two smaller matrices such that 
 $$R\approx UV^T$$ holds where $U\in\mathbb{R}^{m\times k}$ and $V\in\mathbb{R}^{n\times k}$ given that $\rank(R)=k$. Such method is called latent matrix factorization.
 
 As stated in \cite{KoBeVo09} one common way for doing this is the usage of singular value decomposition (SVD) which works fine with dense matrices. In our case the matrix $R$ is highly sparse and SVD wouldn't work. Instead we can formulate the problem as optimization problem with respect to the matrices $U$ and $V$ as described in \cite{Ag16}. We can use the following objective function: 
 $$\min_{U,V} \frac{1}{2}\norm{R-UV^T}^2$$ 
-$\norm{\cdot}^2$ refers here to the squared Frobenius norm which means $$\norm{A}^2=\sum_{i,j}A_{i,j}^2$$.
+$\norm{\cdot}^2$ refers here to the squared Frobenius norm which means $$\norm{A}^2=\sum_{i,j}A_{i,j}^2$$
 
-In the easiest variant of such optimization problem we assume that there are no further constraints. We refer to this variant as unconstrained matrix factorization UMF and we can solve this with gradient descent.
+In the easiest variant of such optimization problem we assume that there are no further constraints. We refer to this variant as unconstrained matrix factorization UMF. The easiest approach to solve this uses gradient descent.
 
-\subsection{Gradient Descent}
-The gradient method is an iterative approach to find an $x$ that minimizes a differentiable function $f$ starting with an given $x_0$. For this we calculated the gradient of the function. This points in the direction of the highest ascent of this function. To minimize the function we go small steps in the opposite direction. This can done with an iterative approach as described in \ref{algo:gd}. 
+\subsection{Gradient Descent}\label{gd}
+The gradient descent method is an iterative approach to find an $x$ that minimizes a differentiable function $f$ starting with an given $x_0$. For this we calculated the gradient of the function. This points in the direction of the highest ascent of this function. To minimize the function we go small steps in the opposite direction. This can done with an iterative approach as described in \ref{algo:gd}. 
 
 \begin{algorithm}
 	\caption{gradient descent}
@@ -61,10 +71,9 @@ The gradient method is an iterative approach to find an $x$ that minimizes a dif
 For an more detailed description refer to \cite{ShSh14}.
 Be aware that this algorithm shows divergence for to large $\eta$. 
 
-
 \subsection{Applying Gradient Descent on UMF} 
-We want to apply the gradient descent approach on the unconstrained matrix factorization problem. For this we need to calculate the gradient of the objective function. We've observed only a few entries of the ratings matrix $R$. Our objective function is undefined. To fix this we set the unobserved entries in $UV^T$ to zero. 
-Now let us define $E:=R-UV^T$ as the error matrix. Again all unobserved entries in this matrix are zero and don't affect the loss function. Our objective function becomes now $\min\frac{1}{2}\norm{E}^2$.
+We want to apply the gradient descent approach on the unconstrained matrix factorization problem. For this we need to calculate the gradient of the objective function. We've observed only a few entries of the ratings matrix $R$. Our objective function is therefor undefined. To fix this we set the unobserved entries in $UV^T$ and $R$ to zero. 
+Now let us define $E:=R-UV^T$ as the error matrix. Again all unobserved entries in this matrix are zero and don't affect the loss function. Our objective function becomes now \[\min\frac{1}{2}\norm{E}^2\]
 We can now calculate the gradient.
 First with respect to the matrix U
 \begin{equation*}
@@ -75,7 +84,7 @@ First with respect to the matrix U
 &=\sum_{i,j}(E_{i,j})(-V_{j,\beta})=-EV_{i,\beta} 
 \end{split}
 \end{equation*}
-Symmetrical we can derive the objective function with respect to V and get 
+Symmetrical we can derive the gradient of the objective function with respect to V and get 
 \begin{equation*}
 \begin{split}
 \nabla_{V_{j,\alpha}} \frac{1}{2}\norm{E}^2 &= \nabla_{V_{j,\alpha}} \frac{1}{2}\sum_{i,j}(R_{i,j}-(UV^T)_{i,j})^2\\
@@ -83,11 +92,13 @@ Symmetrical we can derive the objective function with respect to V and get
 \end{split}
 \end{equation*}
 
-As you can see those gradients can be easily vectorized and so we get $\nabla_U \frac{1}{2}\norm{E}^2=-EV$ and  $\nabla_V \frac{1}{2}\norm{E}^2=-E^TU$. Since the learning rate $\eta$ needs to be positive we get the following update rules: $U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)}$ and $V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)}$. With this update rules we can now use \ref{algo:gd} to minimize our objective function. Now we have only to decide us for a convergence criteria. One possibility is that the value of our objective function should be below a certain value. But since the gradient descent finds only a local, previous unknown, minimum it is hard to decide when to stop. It is therefore better to use other criteria. In my implementation I stop when the difference of the objective function value between two iterations is below a certain limit. Formally the algorithm stops when $|\frac{1}{2}\norm{E^{(n)}}^2-\frac{1}{2}\norm{E^{(n+1)}}^2|=\frac{1}{2}|\sum_{i,j}(E_{i,j}^{(n)})^2-(E_{i,j}^{(n+1)})^2|\leq\epsilon$ holds.
+As you can see those gradients can be easily vectorized and so we get $\nabla_U \frac{1}{2}\norm{E}^2=-EV$ and  $\nabla_V \frac{1}{2}\norm{E}^2=-E^TU$. Since the learning rate $\eta$ needs to be positive we get the following update rules: \[U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)}\] and \[V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)}\]. With this update rules we can now use \ref{algo:gd} to minimize our objective function. Now we have only to decide us for a convergence criteria. One possibility is that the value of our objective function should be below a certain value. But since the gradient descent finds only a local, previous unknown, minimum it is hard to decide when to stop. It is therefore better to use other criteria. In my implementation I stop when the difference of the objective function value between two iterations is below a certain limit. Formally the algorithm stops when $|\frac{1}{2}\norm{E^{(n)}}^2-\frac{1}{2}\norm{E^{(n+1)}}^2|=\frac{1}{2}|\sum_{i,j}(E_{i,j}^{(n)})^2-(E_{i,j}^{(n+1)})^2|\leq\epsilon$ holds.
 
 \subsection{Regularization to Prevent Overfitting}
-In order to prevent overfitting it is common to add a regularization term to the objective function. As stated in \cite{Gi19} this may increase the bias but it also may decrease the variance of the estimator. This is known as Bias-Variance trade-of an can lead to a better predictor. For our matrix factorization problem we can  add the regularization terms $\frac{\lambda}{2}\norm{U}^2$ and $\frac{\lambda}{2}\norm{V}^2$ for $\lambda \geq 0$ as recommended in \cite{Ag16}.
-Plugging this into our objective function we get $\min_{U,V} \frac{1}{2}\norm{E}^2 + \frac{\lambda}{2}\norm{U}^2 + \frac{\lambda}{2}\norm{V}^2$. Calculating the gradient of this function gives us the following update rules: $U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)} - \eta\lambda U^{(i)}$ and $V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)} - \eta\lambda V^{(i)}$.
+In order to prevent overfitting it is common to add a regularization term to the objective function. As stated in \cite{Gi19} this may increase the bias but it also may decrease the variance of the estimator. This is known as Bias-Variance trade-of an can lead to a better predictor. 
+
+For our matrix factorization problem we can  add the regularization terms $\frac{\lambda}{2}\norm{U}^2$ and $\frac{\lambda}{2}\norm{V}^2$ for $\lambda \geq 0$ as recommended in \cite{Ag16}.
+Plugging this into our objective function we get $\min_{U,V} \frac{1}{2}\norm{E}^2 + \frac{\lambda}{2}\norm{U}^2 + \frac{\lambda}{2}\norm{V}^2$. Calculating the gradient of this function gives us the following update rules: \[U^{(i+1)} \leftarrow U^{(i)} + \eta E^{(i)}V^{(i)} - \eta\lambda U^{(i)}\] and \[V^{(i+1)} \leftarrow V^{(i)} + \eta E^{(i)T}U^{(i)} - \eta\lambda V^{(i)}\]
 
 \subsection{Incorporating Bias}
 Users and items are different. Some users may rated many items and others only a few. And some items are bought more often then others and therefor they may have more ratings. 
@@ -106,6 +117,31 @@ o_u + p_i + UV^T_{u,i} &= \sum_{l}^{k}U_{u,l}V^T_{l,i} + o_u + p_i\\ &= \sum_{l}
 It is easy to see that the last two terms can added to the sum if we increase $k$ by $2$ and set $U_{u,k+1}=o_u$ and $V^T_{k+1,i}=1$ as well $V^T_{k+2,i}=p_i$ and $U_{u,k+2}=1$. Our new problem is now pretty similar to our original problem. We have only two small new constraints. The column $k+2$ in $U$ and the column $k+1$ in $V$ must be $1$.
 This constraints can be satisfied in the gradient descent approach if we set this columns after each update step to $1$ as described in \cite{Ag16}.
 
+\subsection{Improving the Gradient Descent}
+We have seen that the gradient descent is one method to minimize our optimization problem. But as described in \ref{gd} for to large $\eta$ the algorithm shows divergence.
+On the other hand for to small $\eta$ the algorithm needs many cycles for convergence. Therefor the algorithm give us room for improvements.
+
+One common way is the usage of stochastic gradient descent SGD. This is the recommended way in \cite{KoBeVo09}. The idea is not to use the gradient of our objective function but an random vector which expected value lies in the (sub-)gradient of the function. For a detailed description refer to \cite{ShSh14}.
+
+We want to use another way. Let us stick with the gradient descent but let us choose $\eta$ in a way that it should be large enough to minimize the function fast but small enough to show no divergence. 
+
+Since we are using a iterative approach the best $\eta$ would be the one, that minimizes $\psi(\eta) = f(x-\eta\nabla f(x))$ for $\eta > 0$. The brute-force algorithm would perform a linear search on $\eta$. But as you notice this is computational expensive.  But there exist some numerical methods to find such $\eta$ in relative fast time. For example such $\eta$ could met the Wolfe conditions:
+\begin{equation*}
+\begin{split}
+f(x-\eta\nabla f(x)) \leq f(x) + c_1\eta\nabla f^T\nabla f(x)
+\end{split}
+\end{equation*}
+\begin{equation*}
+\begin{split}
+\nabla f(x-\eta\nabla f(x))^T\nabla f(x) \geq c_2\nabla f^T\nabla f(x)
+\end{split}
+\end{equation*}
+for $0 < c_1 < c_2 < 1$.
+With this there exists some numerical faster algorithms as described in \cite{NoWr06}.
+
+With this approach we can use our algorithm. The computation of $\eta$ needs now more time but since the step size fits now better we need much less cycles and therefor our algorithm may converge faster. 
+
+Note the following. Since $\eta$ is not fixed it is not sure that $|\frac{1}{2}\norm{E^{(n)}}^2-\frac{1}{2}\norm{E^{(n+1)}}^2|$ gets smaller for every iteration. Sometimes the improved algorithm does big steps. But our convergence criteria works since the steps will be get asymptotically smaller. Also the objective function value gets smaller from iteration to iteration. 
 
 \section{Model Evaluation And Parameter Tuning}
 %divergence rank >20 -> smaller learning rate or linear search
