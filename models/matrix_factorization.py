@@ -66,7 +66,25 @@ class UMF:
         self.bias = bias
         self.global_mean = 0
 
-    def fit(self, verbosity=0, validation_set=None):
+    def __loss_function(self, uvt, user_count, ratings, lambd):
+        U = uvt[:user_count, :]
+        V = uvt[user_count:, :]
+        predicted = np.matmul(U, V.T)
+        E = ratings - predicted
+        E[np.nonzero(ratings == 0)] = 0
+        return 0.5 * np.sum(E * E) + 0.5*lambd * np.sum(U*U) + 0.5*lambd * np.sum(V*V)
+
+    def __gradient_loss_function(self, uvt, user_count, ratings, lambd):
+        U = uvt[:user_count, :]
+        V = uvt[user_count:, :]
+        predicted = np.matmul(U, V.T)
+        E = ratings - predicted
+        E[np.nonzero(ratings == 0)] = 0
+        gradU = lambd * U - np.matmul(E, V)
+        gradV = lambd * V - np.matmul(E.T, U)
+        return np.row_stack((gradU, gradV))
+
+    def fit(self, verbosity=0):
         if self.verbose:
             print("Initializing U and V with random values")
         if self.bias:
@@ -86,29 +104,36 @@ class UMF:
 
         if self.method == "gd":
             E_old = np.zeros((self.m,self.n))
+            U_old = U
+            V_old = V
             for cycle in range(self.max_run + 1):
                 R_predicted = np.matmul(U, V.T)
                 E = (self.train_full - R_predicted)
                 E[np.nonzero(self.train_full == 0)] = 0
 
-                frobenius_error = 0.5* np.abs(np.sum(E*E))
-                last_step = 0.5 * np.abs(np.sum(E*E) - np.sum(E_old**2))
+                loss = self.__loss_function(np.row_stack((U, V)), self.m, self.train_full, self.regularization)
+                last_step = np.abs(self.__loss_function(np.row_stack((U, V)), self.m, self.train_full, self.regularization) -
+                                   self.__loss_function(np.row_stack((U_old, V_old)), self.m, self.train_full, self.regularization))
 
-                self.learn_insights.append((cycle, frobenius_error, last_step))
+                self.learn_insights.append((cycle, loss, last_step))
 
                 if self.verbose and cycle % 10 == 0:
-                    print(f"{cycle} cycles (of {self.max_run}) error (frobenius): {frobenius_error} last step size: {last_step}")
+                    print(f"{cycle} cycles (of {self.max_run}) error (frobenius): {loss} last step size: {last_step}")
 
-                if (last_step <= self.epsilon and self.convergence_check == "step") or (
-                        frobenius_error <= self.epsilon and self.convergence_check == "value"):
+                if ((last_step <= self.epsilon and self.convergence_check == "step") or (
+                        loss <= self.epsilon and self.convergence_check == "value")) and cycle != 0 :
                     if self.verbose:
-                        print(f"Convergence reached after {cycle} cycles! Error (frobenius): {frobenius_error} last step size: {last_step}")
+                        print(f"Convergence reached after {cycle} cycles! Error (frobenius): {loss} last step size: {last_step}")
                     break
 
                 U_old = U
                 V_old = V
-                U = U - self.eta * self.regularization * U_old + self.eta * np.matmul(E, V_old)
-                V = V - self.eta * self.regularization * V_old + self.eta * np.matmul(E.T, U_old)
+                UV = np.row_stack((U,V))
+                UV = UV - self.eta*self.__gradient_loss_function(np.copy(UV), self.m, self.train_full, self.regularization)
+                U = UV[:self.m,:]
+                V = UV[self.m:,:]
+                #U = U - self.eta * self.regularization * U_old + self.eta * np.matmul(E, V_old)
+                #V = V - self.eta * self.regularization * V_old + self.eta * np.matmul(E.T, U_old)
                 if self.bias:
                     U[:, self.rank + 1] = 1
                     V[:, self.rank] = 1
@@ -186,6 +211,7 @@ class NMF:
         for i in range(0, self.max_run+1):
             R_predicted = np.matmul(U, V.T)
             E = self.train_full - R_predicted
+            E[np.nonzero(self.train_full == 0)] = 0
             error = 0.5* np.sum(E*E)
             last_step = 0.5 * np.abs(np.sum(E * E) - np.sum(E_old ** 2))
             if self.verbose and i % 10 == 0:
