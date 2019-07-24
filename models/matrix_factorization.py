@@ -46,7 +46,7 @@ class UMF:
         if not isinstance(epsilon, numbers.Number):
             raise Exception("Epsilon must be an numeric value!")
         self.epsilon = epsilon
-        if type(max_run) != int or rank <= 0:
+        if type(max_run) != int or max_run <= 0:
             raise Exception("Maximum run count must be an positiv integer value!")
         self.max_run = max_run
         if not isinstance(regularization, numbers.Number) or regularization < 0:
