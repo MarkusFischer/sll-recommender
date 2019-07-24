@@ -15,7 +15,7 @@ print("data preprocessing")
 X_train_raw[:,2] += 1
 
 final_model = UMF(X_train = X_train_raw,
-                  rank=20,
+                  rank=19,
                   regularization=4,
                   eta="lsearch",
                   epsilon=1e-2,
@@ -23,7 +23,7 @@ final_model = UMF(X_train = X_train_raw,
                   bias=True,
                   verbose=True)
 final_model.fit()
-pickle.dump(open(os.path.join("trained_models", "final_model.pyc"), "wb"))
+pickle.dump(final_model, open(os.path.join("trained_models", "final_model.pyc"), "wb"))
 
 print(f"RMSE for final model: {accuracy.rmse(X_test_raw[:,2], final_model.predict(X_test_raw[:,(0,1)])-1)}")
 print("saving to file")

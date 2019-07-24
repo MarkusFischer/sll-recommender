@@ -33,12 +33,16 @@ plt.savefig(os.path.join("img", "train_and_qualify.png"))
 plt.figure()
 item_count = np.sum(X_raw, axis=0)
 plt.bar(np.arange(0,item_count.shape[0]), item_count)
-plt.savefig(os.path.join("img", "item_count.png"))
+plt.ylabel("no. of ratings")
+plt.xlabel("item")
+plt.savefig(os.path.join("img", "item-count.png"))
 
 plt.figure()
 user_count = np.sum(X_raw, axis=1)
 plt.bar(np.arange(0,user_count.shape[0]), user_count)
-plt.savefig(os.path.join("img", "user_count.png"))
+plt.ylabel("no. of ratings")
+plt.xlabel("user")
+plt.savefig(os.path.join("img", "user-count.png"))
 
 #rmse ~ rank
 X_raw = np.genfromtxt(os.path.join("data", "train.csv"), delimiter=",", dtype=np.int)
@@ -81,7 +85,7 @@ plt.savefig(os.path.join("img","rank_abs_error.png"))
 
 
 rmses_lambda = []
-lambdas =[0.2, 0.4, 0.6, 0.8, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4]
+lambdas =[0.2, 0.4, 0.6, 0.8, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8]
 model_bias = pickle.load(open(os.path.join("trained_models", "umf_rank_20_bias.pyc"), "rb"))
 rmse_train_bias = accuracy.rmse(X_train_raw[:, 2] - 1, model_bias.predict(X_train_raw[:, (0, 1)]) - 1)
 rmse_validate_bias = accuracy.rmse(X_validate_raw[:, 2], model_bias.predict(X_validate_raw[:, (0, 1)]) - 1)

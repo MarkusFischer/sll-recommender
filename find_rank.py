@@ -16,7 +16,8 @@ X_validate_raw, X_test_raw = ms.train_test_split(X_remaining_raw, test_size=0.1,
 print("data preprocessing")
 X_train_raw[:,2] += 1
 
-ranks = [1, 5, 10, 15, 20, 25, 30, 35]
+#ranks = [1, 5, 10, 15, 20, 25, 30, 35]
+ranks = []
 
 for rank in ranks:
     print(f"Building estimator with rank {rank}")
@@ -40,3 +41,15 @@ for rank in ranks:
 
     filename = "umf_rank_" + str(rank) + "_bias.pyc"
     pickle.dump(factorizer_bias, open(os.path.join("trained_models","adaptive", filename), "wb"))
+
+
+print(f"Building estimator with rank 0 wrt. bias")
+factorizer_bias = UMF(X_train_raw, rank=0, eta=0.0005, regularization=0, epsilon=1e-3, max_run=5000, verbose=True,
+                     bias=True)
+factorizer_bias.fit()
+
+rmse = accuracy.rmse(X_test_raw[:, 2], factorizer_bias.predict(X_test_raw[:, (0, 1)]) - 1)
+print(f"RMSE for rank {rank}: {rmse}")
+
+filename = "umf_rank_0_bias.pyc"
+pickle.dump(factorizer_bias, open(os.path.join("trained_models", filename), "wb"))
