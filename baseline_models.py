@@ -24,12 +24,16 @@ entry_count = np.sum(X_train_bin, axis=1)
 entry_count[entry_count == 0] = 1
 row_mean = row_sum/entry_count
 y_hat_row = row_mean[X_test_raw[:,0]]
-print(f"RMSE {accuracy.rmse(X_test_raw[:,2], y_hat_row)}")
+print(f"RMSE {accuracy.rmse(X_test_raw[:,2], y_hat_row - 1)}")
 
 print("col means")
 col_sum = np.sum(X_train, axis=0)
 entry_count = np.sum(X_train_bin, axis=0)
 entry_count[entry_count == 0] = 1
 col_mean = col_sum/entry_count
-y_hat_row = col_mean[X_test_raw[:,1]]
-print(f"RMSE {accuracy.rmse(X_test_raw[:,2], y_hat_row)}")
+y_hat_col = col_mean[X_test_raw[:,1]]
+print(f"RMSE {accuracy.rmse(X_test_raw[:,2], y_hat_col - 1)}")
+
+print("random")
+random_ratings = np.random.randint(0, 4, X_test_raw[:,2].shape)
+print(f"RMSE {accuracy.rmse(X_test_raw[:,2], random_ratings)}")
