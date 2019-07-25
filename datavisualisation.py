@@ -51,6 +51,11 @@ X_validate_raw, X_test_raw = ms.train_test_split(X_remaining_raw, test_size=0.1,
 
 ranks = [1, 5, 10, 15, 20]
 rmses = []
+rank0_model = pickle.load(open(os.path.join("trained_models", "umf_rank_0_bias.pyc"), "rb"))
+rmse_train = accuracy.rmse(X_train_raw[:,2]-1,rank0_model.predict(X_train_raw[:,(0,1)])-1)
+rmse_validate = accuracy.rmse(X_validate_raw[:, 2], rank0_model.predict(X_validate_raw[:, (0, 1)]) - 1)
+absolute_error = rank0_model.learn_insights[-1][1]
+rmses.append((0, 0, 0, 0, rmse_train, rmse_validate, absolute_error))
 for rank in ranks:
     filename = "umf_rank_" + str(rank) + "_no_bias.pyc"
     model = pickle.load(open(os.path.join("trained_models", filename), "rb"))
@@ -65,8 +70,8 @@ for rank in ranks:
     rmses.append((rank, rmse_train, rmse_validate, absolute_error, rmse_train_bias, rmse_validate_bias, absolute_error_bias))
 plt.figure()
 rmses = np.array(rmses)
-plt.plot(rmses[:,0],rmses[:,2], color="blue", marker="o", label="no bias")
 plt.plot(rmses[:,0],rmses[:,5], color="green", marker="o", label="bias")
+plt.plot(rmses[1:,0],rmses[1:,2], color="blue", marker="o", label="no bias")
 plt.ylabel("RMSE")
 plt.xlabel("rank")
 plt.legend(loc="upper right")

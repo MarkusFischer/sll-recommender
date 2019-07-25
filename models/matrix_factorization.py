@@ -55,6 +55,8 @@ class UMF:
 
         if method.lower() != "gd" and method.lower() != "sgd":
             raise Exception(f"{method} is not an valid learning algorithm. Currently only gradient descent and stochastic gradient descent are supported!")
+        if method.lower() == "sgd" and self.eta == -1:
+            raise Exception(f"For stochastic gradient descent only fixed values of eta are supported!")
         self.method = method.lower()
 
         if convergence_check.lower() != "step" and convergence_check.lower() != "value":
@@ -108,14 +110,9 @@ class UMF:
             V = np.random.rand(self.n, self.rank)
 
         if self.method == "gd":
-            E_old = np.zeros((self.m,self.n))
             U_old = U
             V_old = V
             for cycle in range(self.max_run + 1):
-                R_predicted = np.matmul(U, V.T)
-                E = (self.train_full - R_predicted)
-                E[np.nonzero(self.train_full == 0)] = 0
-
                 loss = self.__loss_function(np.row_stack((U, V)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization)
                 last_step = np.abs(self.__loss_function(np.row_stack((U, V)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization) -
                                    self.__loss_function(np.row_stack((U_old, V_old)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization))
@@ -156,34 +153,37 @@ class UMF:
                 if self.bias:
                     U[:, self.rank - 1] = 1
                     V[:, self.rank - 2] = 1
-                E_old = E
 
         elif self.method == "sgd":
+            U_old = U
+            V_old = V
             E_old = np.zeros((self.m, self.n))
-            for i in range(1, self.max_run):
-                R_predicted = np.matmul(U, V.T)
-                E = self.train_full - R_predicted
-                E[np.nonzero(self.train_full == 0)] = 0
+            for cycle in range(1, self.max_run + 1):
+                loss = self.__loss_function(np.row_stack((U, V)).reshape(-1,1).ravel(), self.m, self.rank, self.train_full, self.regularization)
+                last_step = np.abs(self.__loss_function(np.row_stack((U, V)).reshape(-1, 1).ravel(), self.m, self.rank,
+                                                        self.train_full, self.regularization) -
+                                   self.__loss_function(np.row_stack((U_old, V_old)).reshape(-1, 1).ravel(), self.m,
+                                                        self.rank, self.train_full, self.regularization))
+                if self.verbose and cycle % 10 == 0:
+                    print(f"{cycle} cycles (of {self.max_run}) error (frobenius): {loss} last step size: {last_step}")
 
-                if verbosity >= 1:
-                    print(f"Cycle: {i} of {self.max_run} error(frobenius): {0.5* np.abs(np.sum(E*E))} error(stepsize): {0.5 * np.abs(np.sum(E * E - E_old * E_old))}")
-
-#                if 0.5 * np.abs(np.sum(E * E - E_old * E_old)) <= self.epsilon:
-                if 0.5*np.sum(E*E) <= self.epsilon:
-                    if verbosity >= 1:
-                        print("Convergency reached!")
+                if ((last_step <= self.epsilon and self.convergence_check == "step") or (
+                        loss <= self.epsilon and self.convergence_check == "value")) and cycle != 0:
+                    if self.verbose:
+                        print(
+                            f"Convergence reached after {cycle} cycles! Error (frobenius): {loss} last step size: {last_step}")
                     break
 
                 training_shuffeld = self.train
                 np.random.shuffle(training_shuffeld)
-                #for sample in range(0, training_shuffeld.shape[0]): #TODO regularization
                 i = training_shuffeld[1, 0]
                 j = training_shuffeld[1, 1]
                 U_old = U
                 V_old = V
-                U[i,:] = U_old[i,:] + self.eta * E[i,j] * V_old[j,:]
-                V[j, :] = V_old[j, :] + self.eta * E[i, j] * U_old[i,:]
-                E_old = E
+                E = np.matmul(U, V.T)
+                E[self.train_full == 0] = 0
+                U[i,:] = U_old[i,:] + self.eta * E[i,j] * V_old[j,:] - self.eta*self.regularization*U_old[i,:]
+                V[j, :] = V_old[j, :] + self.eta * E[i, j] * U_old[i,:] - self.eta*self.regularization*V_old[j,:]
 
         self.U = U
         self.V = V
@@ -198,7 +198,7 @@ class UMF:
             return self.matrix[coords[:,0],coords[:,1]]
 
 class NMF:
-    def __init__(self,          #TODO check each parameter for correct type
+    def __init__(self,
                     X_train,
                     rank=10,
                     epsilon=1,
